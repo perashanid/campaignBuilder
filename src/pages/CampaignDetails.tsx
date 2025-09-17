@@ -1,4 +1,4 @@
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { FundraisingCampaign, BloodDonationCampaign } from '../types/campaign';
@@ -28,9 +28,12 @@ export function CampaignDetails() {
     const loadCampaign = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Loading campaign with ID:', id);
         const data = await apiService.getCampaign(id);
+        console.log('✅ Campaign loaded:', data);
         setCampaign(data);
       } catch (err) {
+        console.error('❌ Failed to load campaign:', err);
         setError(err instanceof Error ? err.message : 'Failed to load campaign');
       } finally {
         setLoading(false);
@@ -49,7 +52,17 @@ export function CampaignDetails() {
   }
   
   if (error || !campaign) {
-    return <Navigate to="/404" replace />;
+    return (
+      <div className={styles.notFound}>
+        <div className={styles.content}>
+          <h1>Campaign Not Found</h1>
+          <p>The campaign you're looking for doesn't exist or has been removed.</p>
+          <Link to="/campaigns" className={styles.homeLink}>
+            Browse Campaigns
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const getCampaignTypeLabel = (type: string) => {

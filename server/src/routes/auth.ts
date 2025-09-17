@@ -1,61 +1,65 @@
 import { Hono, Context, Next } from 'hono';
 import { User, Session } from '../db/schema.js';
 import { Variables } from '../types/hono.js';
+import { pool } from '../db/index.js';
 
 const auth = new Hono();
-
-// Mock users for development
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'demo@example.com',
-    name: 'Demo User',
-    password_hash: 'demo123', // In real app, this would be hashed
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01'),
-  },
-];
-
-const mockSessions: Session[] = [];
 
 // Helper to generate token
 function generateToken(): string {
   return `token_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Helper to find user by email
-function findUserByEmail(email: string): User | undefined {
-  return mockUsers.find(user => user.email === email);
+// Helper to generate user ID
+function generateUserId(): string {
+  return `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Helper to find session by token
-function findSessionByToken(token: string): Session | undefined {
-  return mockSessions.find(session =>
-    session.token === token && session.expires_at > new Date()
-  );
+// Helper to generate session ID
+function generateSessionId(): string {
+  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+// Simple password hashing (in production, use bcrypt)
+function hashPassword(password: string): string {
+  // This is a simple hash for demo purposes
+  // In production, use bcrypt or similar
+  return `hashed_${password}`;
 }
 
 // Login endpoint
 auth.post('/login', async (c) => {
+  const client = await pool.connect();
+  
   try {
     const { email, password } = await c.req.json();
 
-    const user = findUserByEmail(email);
-    if (!user || user.password_hash !== password) {
+    // Find user by email
+    const userResult = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return c.json({ error: { message: 'Invalid email or password' } }, 401);
+    }
+
+    const user = userResult.rows[0];
+    const hashedPassword = hashPassword(password);
+
+    if (user.password_hash !== hashedPassword) {
       return c.json({ error: { message: 'Invalid email or password' } }, 401);
     }
 
     // Create session
     const token = generateToken();
-    const session: Session = {
-      id: `session_${Date.now()}`,
-      user_id: user.id,
-      token,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      created_at: new Date(),
-    };
+    const sessionId = generateSessionId();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    mockSessions.push(session);
+    await client.query(
+      'INSERT INTO sessions (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)',
+      [sessionId, user.id, token, expiresAt]
+    );
 
     return c.json({
       user: {
@@ -67,12 +71,17 @@ auth.post('/login', async (c) => {
       token,
     });
   } catch (error) {
+    console.error('Login error:', error);
     return c.json({ error: { message: 'Login failed' } }, 500);
+  } finally {
+    client.release();
   }
 });
 
 // Register endpoint
 auth.post('/register', async (c) => {
+  const client = await pool.connect();
+  
   try {
     const { name, email, password, confirmPassword } = await c.req.json();
 
@@ -80,105 +89,56 @@ auth.post('/register', async (c) => {
       return c.json({ error: { message: 'Passwords do not match' } }, 400);
     }
 
-    if (findUserByEmail(email)) {
+    // Check if user already exists
+    const existingUser = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
       return c.json({ error: { message: 'Email already exists' } }, 400);
     }
 
-    // Create user
-    const user: User = {
-      id: `user_${Date.now()}`,
-      email,
-      name,
-      password_hash: password, // In real app, this would be hashed
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
+    // Create new user
+    const userId = generateUserId();
+    const hashedPassword = hashPassword(password);
 
-    mockUsers.push(user);
+    await client.query(
+      'INSERT INTO users (id, email, name, password_hash) VALUES ($1, $2, $3, $4)',
+      [userId, email, name, hashedPassword]
+    );
 
     // Create session
     const token = generateToken();
-    const session: Session = {
-      id: `session_${Date.now()}`,
-      user_id: user.id,
-      token,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      created_at: new Date(),
-    };
+    const sessionId = generateSessionId();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    mockSessions.push(session);
+    await client.query(
+      'INSERT INTO sessions (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)',
+      [sessionId, userId, token, expiresAt]
+    );
 
     return c.json({
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        createdAt: user.created_at,
-      },
-      token,
-    });
-  } catch (error) {
-    return c.json({ error: { message: 'Registration failed' } }, 500);
-  }
-});
-
-// Google OAuth endpoint
-auth.post('/google', async (c) => {
-  try {
-    const { googleId, email, name } = await c.req.json();
-
-    if (!googleId || !email || !name) {
-      return c.json({ error: { message: 'Missing required Google user data' } }, 400);
-    }
-
-    // Check if user already exists
-    let user = findUserByEmail(email);
-
-    if (!user) {
-      // Create new user from Google data
-      user = {
-        id: `google_${googleId}`,
+        id: userId,
         email,
         name,
-        password_hash: '', // No password for Google users
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      mockUsers.push(user);
-    } else {
-      // Update existing user info
-      user.name = name;
-      user.updated_at = new Date();
-    }
-
-    // Create session
-    const token = generateToken();
-    const session: Session = {
-      id: `session_${Date.now()}`,
-      user_id: user.id,
-      token,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      created_at: new Date(),
-    };
-
-    mockSessions.push(session);
-
-    return c.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        createdAt: user.created_at,
+        createdAt: new Date(),
       },
       token,
     });
   } catch (error) {
-    return c.json({ error: { message: 'Google authentication failed' } }, 500);
+    console.error('Registration error:', error);
+    return c.json({ error: { message: 'Registration failed' } }, 500);
+  } finally {
+    client.release();
   }
 });
 
 // Get current user endpoint
 auth.get('/me', async (c) => {
+  const client = await pool.connect();
+  
   try {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -186,16 +146,30 @@ auth.get('/me', async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const session = findSessionByToken(token);
 
-    if (!session) {
+    // Find session by token
+    const sessionResult = await client.query(
+      'SELECT * FROM sessions WHERE token = $1 AND expires_at > NOW()',
+      [token]
+    );
+
+    if (sessionResult.rows.length === 0) {
       return c.json({ error: { message: 'Invalid or expired token' } }, 401);
     }
 
-    const user = mockUsers.find(u => u.id === session.user_id);
-    if (!user) {
+    const session = sessionResult.rows[0];
+
+    // Get user
+    const userResult = await client.query(
+      'SELECT * FROM users WHERE id = $1',
+      [session.user_id]
+    );
+
+    if (userResult.rows.length === 0) {
       return c.json({ error: { message: 'User not found' } }, 404);
     }
+
+    const user = userResult.rows[0];
 
     return c.json({
       id: user.id,
@@ -204,34 +178,74 @@ auth.get('/me', async (c) => {
       createdAt: user.created_at,
     });
   } catch (error) {
-    return c.json({ error: { message: 'Authentication failed' } }, 500);
+    console.error('Get user error:', error);
+    return c.json({ error: { message: 'Failed to get user' } }, 500);
+  } finally {
+    client.release();
   }
 });
 
-// Middleware to authenticate requests
-export function authenticateUser() {
-  return async (c: Context<{ Variables: Variables }>, next: Next) => {
+// Logout endpoint
+auth.post('/logout', async (c) => {
+  const client = await pool.connect();
+  
+  try {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return c.json({ error: { message: 'No token provided' } }, 401);
     }
 
     const token = authHeader.substring(7);
-    const session = findSessionByToken(token);
 
-    if (!session) {
+    // Delete session
+    await client.query('DELETE FROM sessions WHERE token = $1', [token]);
+
+    return c.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return c.json({ error: { message: 'Logout failed' } }, 500);
+  } finally {
+    client.release();
+  }
+});
+
+// Middleware to authenticate user
+export async function authenticateUser(c: Context, next: Next) {
+  const client = await pool.connect();
+  
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: { message: 'No token provided' } }, 401);
+    }
+
+    const token = authHeader.substring(7);
+
+    // Find session by token
+    const sessionResult = await client.query(
+      'SELECT s.*, u.* FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = $1 AND s.expires_at > NOW()',
+      [token]
+    );
+
+    if (sessionResult.rows.length === 0) {
       return c.json({ error: { message: 'Invalid or expired token' } }, 401);
     }
 
-    const user = mockUsers.find(u => u.id === session.user_id);
-    if (!user) {
-      return c.json({ error: { message: 'User not found' } }, 404);
-    }
+    const user = sessionResult.rows[0];
+    c.set('user', {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.created_at,
+    });
 
-    // Add user to context
-    c.set('user', user);
     await next();
-  };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return c.json({ error: { message: 'Authentication failed' } }, 500);
+  } finally {
+    client.release();
+  }
 }
 
 export default auth;
