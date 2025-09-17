@@ -54,7 +54,7 @@ app.notFound((c) => {
 });
 
 // Error handler
-app.onError((err, c) => {
+app.onError((err: Error, c) => {
   console.error('Unhandled error:', err);
   return c.json({ 
     error: { 
@@ -91,7 +91,7 @@ async function setupDatabase() {
       }
     }
   } catch (error) {
-    console.log('⚠️ Database setup skipped:', error.message);
+    console.log('⚠️ Database setup skipped:', error instanceof Error ? error.message : 'Unknown error');
   }
 }
 

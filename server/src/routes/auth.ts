@@ -1,5 +1,6 @@
-import { Hono } from 'hono';
+import { Hono, Context, Next } from 'hono';
 import { User, Session } from '../db/schema';
+import { Variables } from '../types/hono.js';
 
 const auth = new Hono();
 
@@ -19,7 +20,7 @@ const mockSessions: Session[] = [];
 
 // Helper to generate token
 function generateToken(): string {
-  return `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `token_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
 // Helper to find user by email
@@ -124,7 +125,7 @@ auth.post('/register', async (c) => {
 // Google OAuth endpoint
 auth.post('/google', async (c) => {
   try {
-    const { googleId, email, name, picture } = await c.req.json();
+    const { googleId, email, name } = await c.req.json();
 
     if (!googleId || !email || !name) {
       return c.json({ error: { message: 'Missing required Google user data' } }, 400);
@@ -209,7 +210,7 @@ auth.get('/me', async (c) => {
 
 // Middleware to authenticate requests
 export function authenticateUser() {
-  return async (c: any, next: any) => {
+  return async (c: Context<{ Variables: Variables }>, next: Next) => {
     const authHeader = c.req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return c.json({ error: { message: 'No token provided' } }, 401);

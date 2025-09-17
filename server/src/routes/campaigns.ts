@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { pool } from '../db/index.js';
 import { User } from '../db/schema.js';
 import { authenticateUser } from './auth.js';
+import { Variables } from '../types/hono.js';
 
 // Simple ID generator (no external dependency needed)
 function createId(): string {
@@ -48,12 +49,12 @@ async function generateUniqueSlug(title: string): Promise<string> {
   }
 }
 
-const app = new Hono();
+const app = new Hono<{ Variables: Variables }>();
 
 // Get user's campaigns (protected)
 app.get('/user', authenticateUser(), async (c) => {
   try {
-    const user = c.get('user') as User;
+    const user = c.get('user');
     
     const result = await pool.query(`
       SELECT 
@@ -65,7 +66,7 @@ app.get('/user', authenticateUser(), async (c) => {
       ORDER BY created_at DESC
     `, [user.id]);
     
-    const formattedCampaigns = result.rows.map(campaign => ({
+    const formattedCampaigns = result.rows.map((campaign: any) => ({
       id: campaign.id,
       title: campaign.title,
       description: campaign.description,
@@ -116,7 +117,7 @@ app.post('/', authenticateUser(), async (c) => {
     
     await client.query('BEGIN');
 
-    const user = c.get('user') as User;
+    const user = c.get('user');
 
     // Insert campaign
     const campaignResult = await client.query(`
@@ -302,7 +303,7 @@ app.get('/', async (c) => {
       ORDER BY created_at DESC
     `);
     
-    const formattedCampaigns = result.rows.map(campaign => ({
+    const formattedCampaigns = result.rows.map((campaign: any) => ({
       id: campaign.id,
       title: campaign.title,
       description: campaign.description,
@@ -381,7 +382,7 @@ app.get('/most-visited', async (c) => {
       LIMIT 6
     `);
     
-    const formattedCampaigns = result.rows.map(campaign => ({
+    const formattedCampaigns = result.rows.map((campaign: any) => ({
       id: campaign.id,
       title: campaign.title,
       description: campaign.description,
@@ -473,7 +474,7 @@ app.put('/:id', authenticateUser(), async (c) => {
   
   try {
     const id = c.req.param('id');
-    const user = c.get('user') as User;
+    const user = c.get('user');
     const body = await c.req.json();
     
     // Check if campaign belongs to user
@@ -580,7 +581,7 @@ app.put('/:id', authenticateUser(), async (c) => {
 app.delete('/:id', authenticateUser(), async (c) => {
   try {
     const id = c.req.param('id');
-    const user = c.get('user') as User;
+    const user = c.get('user');
     
     const result = await pool.query(`
       DELETE FROM campaigns 
@@ -614,7 +615,7 @@ app.delete('/:id', authenticateUser(), async (c) => {
 app.patch('/:id/visibility', authenticateUser(), async (c) => {
   try {
     const id = c.req.param('id');
-    const user = c.get('user') as User;
+    const user = c.get('user');
     const body = await c.req.json();
     
     const result = await pool.query(`
