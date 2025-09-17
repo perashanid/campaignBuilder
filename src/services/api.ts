@@ -1,7 +1,13 @@
 import { Campaign, CampaignFormData } from '../types/campaign';
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://campaignbuilder-backend.onrender.com/api';
+// Auto-detect environment and use appropriate API URL
+const isProduction = window.location.hostname.includes('onrender.com') || 
+                    window.location.hostname.includes('campaignbuilder-frontend');
+
+const API_BASE_URL = isProduction 
+  ? 'https://campaignbuilder-backend.onrender.com/api'
+  : 'http://localhost:3001/api';
 
 
 

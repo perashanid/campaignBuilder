@@ -25,38 +25,28 @@ class UrlService {
   }
 
   /**
-   * Load URL configuration from environment variables with fallbacks
+   * Load URL configuration with auto-detection
    */
   private loadConfiguration(): UrlConfig {
-    // Get environment variables
-    const baseUrl = import.meta.env.VITE_BASE_URL;
-    const apiUrl = import.meta.env.VITE_API_URL;
-    const environment = import.meta.env.VITE_ENVIRONMENT || 'development';
-    const devMode = import.meta.env.VITE_DEV_MODE === 'true';
+    // Auto-detect production environment
+    const isProduction = typeof window !== 'undefined' && 
+                        (window.location.hostname.includes('onrender.com') || 
+                         window.location.hostname.includes('campaignbuilder-frontend'));
 
-    // Determine base URL with fallback logic
-    let finalBaseUrl: string;
-    
-    if (baseUrl) {
-      // Use configured base URL
-      finalBaseUrl = baseUrl;
-    } else if (environment === 'production') {
-      // In production, try to use current origin but warn if it looks like localhost
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-      if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
-        console.warn('⚠️ Production environment detected but using localhost URL. Please configure VITE_BASE_URL.');
-      }
-      finalBaseUrl = currentOrigin;
-    } else {
-      // Development fallback - use current origin
-      finalBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    }
+    // Set URLs based on environment
+    const finalBaseUrl = isProduction 
+      ? 'https://campaignbuilder-frontend.onrender.com'
+      : 'http://localhost:3000';
+
+    const finalApiUrl = isProduction
+      ? 'https://campaignbuilder-backend.onrender.com/api'
+      : 'http://localhost:3001/api';
 
     return {
       baseUrl: finalBaseUrl,
-      apiUrl: apiUrl || 'https://campaignbuilder-backend.onrender.com/api',
-      environment: environment as 'development' | 'production' | 'staging',
-      allowLocalOverride: devMode
+      apiUrl: finalApiUrl,
+      environment: isProduction ? 'production' : 'development',
+      allowLocalOverride: !isProduction
     };
   }
 
