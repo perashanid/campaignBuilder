@@ -1,0 +1,35 @@
+{
+  "name": "campaign-platform-api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "build:render": "chmod +x render-build.sh && ./render-build.sh",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "test": "bun test-runner.ts",
+    "test:watch": "bun test --watch",
+    "test:db": "bun test-runner.ts database",
+    "test:api": "bun test-runner.ts api",
+    "test:integration": "bun test-runner.ts integration",
+    "test:coverage": "bun test --coverage",
+    "test:raw": "bun test",
+    "db:test:setup": "tsx tests/setup/database.ts",
+    "db:test:teardown": "tsx tests/setup/teardown.ts"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.8.2",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0",
+    "bun-types": "latest"
+  }
+}

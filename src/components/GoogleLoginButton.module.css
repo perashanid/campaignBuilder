@@ -1,0 +1,28 @@
+.container {
+  width: 100%;
+}
+
+.googleButton {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.googleButton.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Override Google button styles to match our theme */
+.googleButton :global(.google-signin-button) {
+  background: var(--color-background) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+.googleButton :global(.google-signin-button:hover) {
+  background: var(--color-surface) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
