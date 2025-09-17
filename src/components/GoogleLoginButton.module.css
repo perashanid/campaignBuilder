@@ -1,0 +1,25 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.googleButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.googleButton.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Override Google button styles if needed */
+.googleButton>div {
+    width: 100% !important;
+}

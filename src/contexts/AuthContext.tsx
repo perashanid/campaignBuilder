@@ -51,7 +51,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
-
   logout: () => void;
 }
 
@@ -99,8 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
-
-
 
   const logout = () => {
     authService.logout();

@@ -118,8 +118,6 @@ class AuthService {
     return response;
   }
 
-
-
   async getCurrentUser(): Promise<User | null> {
     if (!this.token) {
       return null;
