@@ -14,7 +14,11 @@
     "build:all": "npm run build && cd server && npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node test-runner.js",
+    "test:url": "node test-runner.js",
+    "test:unit": "node -e \"import('./src/services/__tests__/urlService.test.ts').then(m => m.runner.run())\"",
+    "test:integration": "node -e \"import('./src/__tests__/urlSharing.integration.test.ts').then(m => m.runner.run())\""
   },
   "dependencies": {
     "react": "^18.2.0",

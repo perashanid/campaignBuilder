@@ -182,3 +182,4 @@ docker-compose.override.yml
 
 # Additional files
 *.log
+test-runner.js

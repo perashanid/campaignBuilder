@@ -154,4 +154,62 @@
   .description {
     font-size: 0.9rem;
   }
+}/* Error ha
+ndling styles */
+.errorMessage {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.errorMessage p {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.errorMessage p:first-child {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.urlHelp {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Dark theme error styles */
+@media (prefers-color-scheme: dark) {
+  .errorMessage {
+    background: #451a1a;
+    border-color: #991b1b;
+  }
+  
+  .errorMessage p {
+    color: #fca5a5;
+  }
+}
+
+/* Disabled button styles */
+.copyButton:disabled,
+.socialButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.copyButton:disabled:hover,
+.socialButton:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: var(--primary);
+}
+
+.socialButton:disabled:hover {
+  background: var(--background);
+  color: var(--text-primary);
 }
