@@ -1,42 +1,27 @@
-import { seedLocalStorage, clearLocalStorage } from './seedData';
-
 /**
  * Development setup utilities
  */
 export class DevSetup {
   /**
-   * Initialize development environment with sample data
+   * Initialize development environment
    */
   static init(): void {
     console.log('🚀 Initializing development environment...');
     
     // Check if we're in development mode
     if (import.meta.env.DEV) {
-      // Check if localStorage already has data
-      const existingCampaigns = localStorage.getItem('campaigns');
-      
-      if (!existingCampaigns) {
-        console.log('📦 No existing data found, seeding with sample campaigns...');
-        seedLocalStorage();
-      } else {
-        console.log('✅ Existing campaign data found in localStorage');
-      }
+      console.log('✅ Development mode - using API backend');
       
       // Add development helpers to window object
       if (typeof window !== 'undefined') {
         (window as any).devUtils = {
-          seedData: seedLocalStorage,
-          clearData: clearLocalStorage,
-          showData: () => {
-            console.log('Campaigns:', JSON.parse(localStorage.getItem('campaigns') || '[]'));
-            console.log('Views:', JSON.parse(localStorage.getItem('campaign_views') || '{}'));
-          }
+          showConfig: () => DevSetup.showConfig(),
+          checkEnv: () => DevSetup.checkEnvironment()
         };
         
         console.log('🛠️  Development utilities available at window.devUtils');
-        console.log('   - devUtils.seedData() - Add sample campaigns');
-        console.log('   - devUtils.clearData() - Clear all data');
-        console.log('   - devUtils.showData() - Show current data');
+        console.log('   - devUtils.showConfig() - Show current configuration');
+        console.log('   - devUtils.checkEnv() - Check environment variables');
       }
     }
   }
@@ -64,7 +49,6 @@ export class DevSetup {
     console.log('  - Mode:', import.meta.env.MODE);
     console.log('  - Dev:', import.meta.env.DEV);
     console.log('  - Prod:', import.meta.env.PROD);
-    console.log('  - API URL:', import.meta.env.VITE_API_URL || 'Not set (using localStorage)');
-    console.log('  - Use Local Storage:', import.meta.env.VITE_USE_LOCAL_STORAGE || 'true');
+    console.log('  - API URL:', import.meta.env.VITE_API_URL || 'Not set');
   }
 }
