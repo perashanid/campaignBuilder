@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { pool } from '../db/index.js';
-import { Campaign, PaymentDetails } from '../db/schema.js';
+import { User } from '../db/schema.js';
 import { authenticateUser } from './auth.js';
 
 // Simple ID generator (no external dependency needed)
@@ -53,12 +53,13 @@ const app = new Hono();
 // Get user's campaigns (protected)
 app.get('/user', authenticateUser(), async (c) => {
   try {
-    const user = c.get('user');
+    const user = c.get('user') as User;
     
     const result = await pool.query(`
       SELECT 
         id, title, description, type, main_image_url, created_at, is_hidden,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level
+        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
+        view_count
       FROM campaigns 
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -71,7 +72,7 @@ app.get('/user', authenticateUser(), async (c) => {
       type: campaign.type,
       mainImage: campaign.main_image_url,
       createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      isHidden: campaign.is_hidden,
+      isHidden: campaign.is_hidden || false,
       targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
       currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
       hospitalInfo: campaign.type === 'blood-donation' ? {
@@ -79,6 +80,7 @@ app.get('/user', authenticateUser(), async (c) => {
         address: campaign.hospital_address,
       } : undefined,
       urgencyLevel: campaign.urgency_level,
+      viewCount: campaign.view_count || 0,
     }));
 
     return c.json(formattedCampaigns);
@@ -114,7 +116,7 @@ app.post('/', authenticateUser(), async (c) => {
     
     await client.query('BEGIN');
 
-    const user = c.get('user');
+    const user = c.get('user') as User;
 
     // Insert campaign
     const campaignResult = await client.query(`
@@ -287,14 +289,16 @@ app.get('/:id', async (c) => {
   }
 });
 
-// Get all campaigns
+// Get all campaigns (public, excluding hidden)
 app.get('/', async (c) => {
   try {
     const result = await pool.query(`
       SELECT 
         id, title, description, type, main_image_url, created_at,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level
+        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
+        view_count, is_hidden
       FROM campaigns 
+      WHERE is_hidden = FALSE OR is_hidden IS NULL
       ORDER BY created_at DESC
     `);
     
@@ -312,6 +316,7 @@ app.get('/', async (c) => {
         address: campaign.hospital_address,
       } : undefined,
       urgencyLevel: campaign.urgency_level,
+      viewCount: campaign.view_count || 0,
     }));
 
     return c.json(formattedCampaigns);
@@ -371,6 +376,7 @@ app.get('/most-visited', async (c) => {
         id, title, description, type, main_image_url, created_at, view_count,
         target_amount, current_amount, hospital_name, hospital_address, urgency_level
       FROM campaigns 
+      WHERE is_hidden = FALSE OR is_hidden IS NULL
       ORDER BY COALESCE(view_count, 0) DESC, created_at DESC
       LIMIT 6
     `);
@@ -467,7 +473,7 @@ app.put('/:id', authenticateUser(), async (c) => {
   
   try {
     const id = c.req.param('id');
-    const user = c.get('user');
+    const user = c.get('user') as User;
     const body = await c.req.json();
     
     // Check if campaign belongs to user
@@ -574,7 +580,7 @@ app.put('/:id', authenticateUser(), async (c) => {
 app.delete('/:id', authenticateUser(), async (c) => {
   try {
     const id = c.req.param('id');
-    const user = c.get('user');
+    const user = c.get('user') as User;
     
     const result = await pool.query(`
       DELETE FROM campaigns 
@@ -608,7 +614,7 @@ app.delete('/:id', authenticateUser(), async (c) => {
 app.patch('/:id/visibility', authenticateUser(), async (c) => {
   try {
     const id = c.req.param('id');
-    const user = c.get('user');
+    const user = c.get('user') as User;
     const body = await c.req.json();
     
     const result = await pool.query(`

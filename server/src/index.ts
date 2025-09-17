@@ -66,11 +66,42 @@ app.onError((err, c) => {
 
 const port = parseInt(process.env.PORT || '3001');
 
+// Auto-setup database on first run
+async function setupDatabase() {
+  try {
+    // Check if campaigns table exists
+    const result = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'campaigns'
+      );
+    `);
+    
+    if (!result.rows[0].exists) {
+      console.log('🔄 Setting up database for first time...');
+      const { migrate } = await import('./db/migrate.js');
+      await migrate();
+      
+      // Only seed if no campaigns exist
+      const campaignCount = await pool.query('SELECT COUNT(*) FROM campaigns');
+      if (parseInt(campaignCount.rows[0].count) === 0) {
+        console.log('🌱 Adding sample data...');
+        // Import and run seed function here if needed
+      }
+    }
+  } catch (error) {
+    console.log('⚠️ Database setup skipped:', error.message);
+  }
+}
+
 console.log(`🚀 Server starting on http://localhost:${port}`);
 
-serve({
-  fetch: app.fetch,
-  port,
-});
-
-console.log(`✅ Server running on http://localhost:${port}`);
+// Setup database then start server
+setupDatabase().then(() => {
+  serve({
+    fetch: app.fetch,
+    port,
+  });
+  console.log(`✅ Server running on http://localhost:${port}`);
+}).catch(console.error);
