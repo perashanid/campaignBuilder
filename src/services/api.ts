@@ -3,15 +3,9 @@ import { authService } from './authService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
-  : (import.meta.env.PROD
-    ? '/api'
-    : 'http://localhost:3001/api');
+  : 'https://campaignbuilder-backend.onrender.com/api';
 
-// Debug logging
-console.log('🔧 API Configuration:');
-console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-console.log('Final API_BASE_URL:', API_BASE_URL);
-console.log('PROD mode:', import.meta.env.PROD);
+
 
 export interface ApiResponse<T> {
   data?: T;

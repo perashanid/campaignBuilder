@@ -28,9 +28,7 @@ export function CampaignDetails() {
     const loadCampaign = async () => {
       try {
         setLoading(true);
-        console.log('🔍 Loading campaign with ID:', id);
         const data = await apiService.getCampaign(id);
-        console.log('✅ Campaign loaded:', data);
         setCampaign(data);
       } catch (err) {
         console.error('❌ Failed to load campaign:', err);

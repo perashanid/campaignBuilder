@@ -3,9 +3,7 @@ import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../ty
 
 const API_BASE_URL = import.meta.env.VITE_API_URL 
   ? `${import.meta.env.VITE_API_URL}/api`
-  : (import.meta.env.PROD 
-    ? '/api'
-    : 'http://localhost:3001/api');
+  : 'https://campaignbuilder-backend.onrender.com/api';
 
 // Debug logging
 console.log('🔐 Auth Service Configuration:');
