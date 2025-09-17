@@ -169,7 +169,8 @@ app.post('/', authenticateUser(), async (c) => {
     await client.query('COMMIT');
 
     // Generate shareable URL
-    const shareUrl = `http://localhost:5173/campaign/${campaignId}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const shareUrl = `${frontendUrl}/campaign/${campaignId}`;
 
     const campaign = campaignResult.rows[0];
     
