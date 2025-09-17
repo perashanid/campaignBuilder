@@ -1,10 +1,17 @@
 import { Campaign, CampaignFormData } from '../types/campaign';
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD 
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : (import.meta.env.PROD
     ? '/api'
     : 'http://localhost:3001/api');
+
+// Debug logging
+console.log('🔧 API Configuration:');
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('Final API_BASE_URL:', API_BASE_URL);
+console.log('PROD mode:', import.meta.env.PROD);
 
 export interface ApiResponse<T> {
   data?: T;
@@ -24,7 +31,9 @@ export interface CreateCampaignResponse {
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
+    console.log('🌐 Making API request to:', url);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers as Record<string, string>,
@@ -34,18 +43,28 @@ class ApiService {
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
-    
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      console.log('📡 Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API Error:', errorData);
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Success:', data);
+      return data;
+    } catch (error) {
+      console.error('🚨 Network Error:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async createCampaign(campaignData: CampaignFormData): Promise<CreateCampaignResponse> {
