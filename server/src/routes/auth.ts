@@ -1,5 +1,5 @@
 import { Hono, Context, Next } from 'hono';
-import { User, Session } from '../db/schema';
+import { User, Session } from '../db/schema.js';
 import { Variables } from '../types/hono.js';
 
 const auth = new Hono();
@@ -30,7 +30,7 @@ function findUserByEmail(email: string): User | undefined {
 
 // Helper to find session by token
 function findSessionByToken(token: string): Session | undefined {
-  return mockSessions.find(session => 
+  return mockSessions.find(session =>
     session.token === token && session.expires_at > new Date()
   );
 }
@@ -133,7 +133,7 @@ auth.post('/google', async (c) => {
 
     // Check if user already exists
     let user = findUserByEmail(email);
-    
+
     if (!user) {
       // Create new user from Google data
       user = {
@@ -187,7 +187,7 @@ auth.get('/me', async (c) => {
 
     const token = authHeader.substring(7);
     const session = findSessionByToken(token);
-    
+
     if (!session) {
       return c.json({ error: { message: 'Invalid or expired token' } }, 401);
     }
@@ -218,7 +218,7 @@ export function authenticateUser() {
 
     const token = authHeader.substring(7);
     const session = findSessionByToken(token);
-    
+
     if (!session) {
       return c.json({ error: { message: 'Invalid or expired token' } }, 401);
     }
