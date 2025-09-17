@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CampaignUpdate, CampaignUpdateFormData } from '../types/campaign';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
@@ -41,7 +41,7 @@ export function CampaignUpdates({ campaignId, isOwner = false }: CampaignUpdates
       const newUpdate = await apiService.createCampaignUpdate(campaignId, formData);
       setUpdates(prev => [newUpdate, ...prev]);
       setShowForm(false);
-      showNotification('Update created successfully!', 'success');
+      showNotification({ message: 'Update created successfully!', type: 'success' });
     } catch (error) {
       throw error; // Let UpdateForm handle the error
     } finally {

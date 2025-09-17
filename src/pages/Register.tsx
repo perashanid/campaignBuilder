@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { RegisterCredentials } from '../types/user';
-import { GoogleLoginButton } from '../components/GoogleLoginButton';
+
 import styles from './Register.module.css';
 
 export function Register() {
@@ -23,7 +23,7 @@ export function Register() {
     e.preventDefault();
     
     if (credentials.password !== credentials.confirmPassword) {
-      showNotification('Passwords do not match', 'error');
+      showNotification({ message: 'Passwords do not match', type: 'error' });
       return;
     }
 
@@ -31,13 +31,13 @@ export function Register() {
 
     try {
       await register(credentials);
-      showNotification('Account created successfully!', 'success');
+      showNotification({ message: 'Account created successfully!', type: 'success' });
       navigate('/dashboard');
     } catch (error) {
-      showNotification(
-        error instanceof Error ? error.message : 'Registration failed',
-        'error'
-      );
+      showNotification({
+        message: error instanceof Error ? error.message : 'Registration failed',
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -54,16 +54,7 @@ export function Register() {
         <h1 className={styles.title}>Create Account</h1>
         <p className={styles.subtitle}>Join us to start creating campaigns</p>
 
-        <div className={styles.googleLogin}>
-          <GoogleLoginButton 
-            text="signup_with" 
-            disabled={isSubmitting}
-          />
-        </div>
 
-        <div className={styles.divider}>
-          <span>or</span>
-        </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>

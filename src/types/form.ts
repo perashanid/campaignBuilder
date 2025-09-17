@@ -18,6 +18,20 @@ export interface FormValidationResult {
   errors: ValidationError[];
 }
 
+export interface FormValidation {
+  isValid: boolean;
+  errors: FormError[];
+}
+
+export interface FormError {
+  field: string;
+  message: string;
+}
+
+export interface ValidationRules {
+  [fieldName: string]: ValidationRule;
+}
+
 export interface FormField {
   name: string;
   value: any;
@@ -26,11 +40,12 @@ export interface FormField {
   rules?: ValidationRule;
 }
 
-export interface FormState {
+export interface FormState<T = any> {
   fields: Record<string, FormField>;
   isValid: boolean;
   isSubmitting: boolean;
   errors: ValidationError[];
+  values: T;
 }
 
 export interface UseFormOptions {

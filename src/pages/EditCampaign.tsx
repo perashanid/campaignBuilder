@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
@@ -38,7 +38,7 @@ export function EditCampaign() {
       const campaignData = await apiService.getCampaign(id!);
       setCampaign(campaignData);
     } catch (error) {
-      showNotification('Campaign not found or access denied', 'error');
+      showNotification({ message: 'Campaign not found or access denied', type: 'error' });
       navigate('/dashboard');
     } finally {
       setIsLoading(false);
@@ -51,13 +51,13 @@ export function EditCampaign() {
     setIsSubmitting(true);
     try {
       await apiService.updateCampaign(campaign.id, formData);
-      showNotification('Campaign updated successfully!', 'success');
+      showNotification({ message: 'Campaign updated successfully!', type: 'success' });
       navigate('/dashboard');
     } catch (error) {
-      showNotification(
-        error instanceof Error ? error.message : 'Failed to update campaign',
-        'error'
-      );
+      showNotification({
+        message: error instanceof Error ? error.message : 'Failed to update campaign',
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }

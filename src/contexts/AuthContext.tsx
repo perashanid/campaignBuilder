@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User, LoginCredentials, RegisterCredentials } from '../types/user';
 import { authService } from '../services/authService';
-import { GoogleUser } from '../services/googleAuth';
+
 
 interface AuthState {
   user: User | null;
@@ -51,7 +51,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
-  loginWithGoogle: (googleUser: GoogleUser) => Promise<void>;
+
   logout: () => void;
 }
 
@@ -100,16 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginWithGoogle = async (googleUser: GoogleUser) => {
-    dispatch({ type: 'AUTH_START' });
-    try {
-      const { user } = await authService.loginWithGoogle(googleUser);
-      dispatch({ type: 'AUTH_SUCCESS', payload: user });
-    } catch (error) {
-      dispatch({ type: 'AUTH_FAILURE' });
-      throw error;
-    }
-  };
+
 
   const logout = () => {
     authService.logout();
@@ -122,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...state,
         login,
         register,
-        loginWithGoogle,
         logout,
       }}
     >

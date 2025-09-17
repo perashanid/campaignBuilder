@@ -1,4 +1,4 @@
-import { FormValidation, FormError } from '../types/index';
+import { ValidationRules, FormError } from '../types/form';
 
 /**
  * Check if a value is empty (null, undefined, empty string, or whitespace-only string)
@@ -13,7 +13,7 @@ function isEmpty(value: unknown): boolean {
 export function validateField<T = unknown>(
   fieldName: string,
   value: T,
-  rules: FormValidation
+  rules: ValidationRules
 ): string | null {
   const rule = rules[fieldName as keyof typeof rules];
   if (!rule) return null;
@@ -68,7 +68,7 @@ export function validateField<T = unknown>(
  */
 export function validateForm<T extends Record<string, any>>(
   data: T,
-  rules: FormValidation
+  rules: ValidationRules
 ): FormError[] {
   const errors: FormError[] = [];
 
@@ -85,7 +85,7 @@ export function validateForm<T extends Record<string, any>>(
 /**
  * Campaign-specific validation rules
  */
-export const campaignValidationRules: FormValidation = {
+export const campaignValidationRules: ValidationRules = {
   title: {
     required: true,
     minLength: 3, // Reduced from 5

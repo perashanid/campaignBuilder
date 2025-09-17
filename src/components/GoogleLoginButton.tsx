@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
@@ -50,20 +50,20 @@ export function GoogleLoginButton({
     const handleGoogleLoginSuccess = async (event: CustomEvent<GoogleUser>) => {
       try {
         await loginWithGoogle(event.detail);
-        showNotification('Login successful!', 'success');
+        showNotification({ message: 'Login successful!', type: 'success' });
         navigate(from, { replace: true });
       } catch (error) {
-        showNotification(
-          error instanceof Error ? error.message : 'Google login failed',
-          'error'
-        );
+        showNotification({
+          message: error instanceof Error ? error.message : 'Google login failed',
+          type: 'error'
+        });
       }
     };
 
-    window.addEventListener('googleLoginSuccess', handleGoogleLoginSuccess as EventListener);
+    window.addEventListener('googleLoginSuccess', handleGoogleLoginSuccess as unknown as EventListener);
 
     return () => {
-      window.removeEventListener('googleLoginSuccess', handleGoogleLoginSuccess as EventListener);
+      window.removeEventListener('googleLoginSuccess', handleGoogleLoginSuccess as unknown as EventListener);
     };
   }, [text, theme, size, disabled, loginWithGoogle, navigate, from, showNotification]);
 

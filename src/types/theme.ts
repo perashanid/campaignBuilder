@@ -25,3 +25,5 @@ export interface ThemeContextValue {
   isDark: boolean;
   toggleTheme: () => void;
 }
+
+export type ThemeContextType = ThemeContextValue;

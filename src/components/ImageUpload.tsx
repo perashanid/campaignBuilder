@@ -9,6 +9,7 @@ interface ImageUploadProps {
   error?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
 export function ImageUpload({ 
@@ -17,7 +18,8 @@ export function ImageUpload({
   onChange, 
   error, 
   placeholder = 'Enter image URL (https://...)',
-  required = false 
+  required = false,
+  disabled = false
 }: ImageUploadProps) {
   const [isValidating, setIsValidating] = useState(false);
   const [previewError, setPreviewError] = useState(false);
@@ -63,6 +65,7 @@ export function ImageUpload({
           value={value}
           onChange={(e) => handleUrlChange(e.target.value)}
           placeholder={placeholder}
+          disabled={disabled}
           className={`${styles.input} ${error ? styles.inputError : ''}`}
         />
         

@@ -1,5 +1,5 @@
 import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../types/user';
-import { GoogleUser } from './googleAuth';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD 
@@ -118,48 +118,7 @@ class AuthService {
     return response;
   }
 
-  async loginWithGoogle(googleUser: GoogleUser): Promise<AuthResponse> {
-    if (USE_LOCAL_STORAGE) {
-      // Mock Google login for local development
-      const user: User = {
-        id: googleUser.id,
-        email: googleUser.email,
-        name: googleUser.name,
-        createdAt: new Date(),
-      };
 
-      // Check if user already exists
-      const existingUserIndex = MOCK_USERS.findIndex(u => u.email === googleUser.email);
-      if (existingUserIndex >= 0) {
-        MOCK_USERS[existingUserIndex] = user;
-      } else {
-        MOCK_USERS.push(user);
-      }
-      
-      const token = `google_token_${user.id}_${Date.now()}`;
-      this.token = token;
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('current_user', JSON.stringify(user));
-      
-      return { user, token };
-    }
-
-    const response = await this.request<AuthResponse>('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({
-        googleId: googleUser.id,
-        email: googleUser.email,
-        name: googleUser.name,
-        picture: googleUser.picture,
-      }),
-    });
-
-    this.token = response.token;
-    localStorage.setItem('auth_token', response.token);
-    localStorage.setItem('current_user', JSON.stringify(response.user));
-
-    return response;
-  }
 
   async getCurrentUser(): Promise<User | null> {
     if (!this.token) {

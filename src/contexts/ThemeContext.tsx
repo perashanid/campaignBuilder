@@ -14,6 +14,7 @@ const lightTheme: ThemeConfig = {
     success: '#10b981',
     warning: '#f59e0b',
     error: '#ef4444',
+    info: '#0ea5e9',
   },
 };
 
@@ -30,6 +31,7 @@ const darkTheme: ThemeConfig = {
     success: '#22c55e',
     warning: '#fbbf24',
     error: '#f87171',
+    info: '#38bdf8',
   },
 };
 
@@ -74,9 +76,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, [theme.mode]);
 
   const value: ThemeContextType = useMemo(() => ({
-    theme,
-    toggleTheme,
+    theme: theme.mode,
     setTheme,
+    isDark: theme.mode === 'dark',
+    toggleTheme,
   }), [theme, toggleTheme]);
 
   return (

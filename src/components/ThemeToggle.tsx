@@ -9,10 +9,10 @@ export function ThemeToggle() {
     <button
       className={styles.themeToggle}
       onClick={toggleTheme}
-      aria-label={`Switch to ${theme.mode === 'light' ? 'dark' : 'light'} mode`}
-      title={`Switch to ${theme.mode === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
-      {theme.mode === 'light' ? (
+      {theme === 'light' ? (
         <svg
           className={styles.icon}
           fill="none"

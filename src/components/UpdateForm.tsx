@@ -48,17 +48,17 @@ export function UpdateForm({ onSubmit, onCancel, isSubmitting = false }: UpdateF
     e.preventDefault();
     
     if (!validateForm()) {
-      showNotification('Please fix the errors in the form', 'error');
+      showNotification({ message: 'Please fix the errors in the form', type: 'error' });
       return;
     }
 
     try {
       await onSubmit(formData);
     } catch (error) {
-      showNotification(
-        error instanceof Error ? error.message : 'Failed to create update',
-        'error'
-      );
+      showNotification({
+        message: error instanceof Error ? error.message : 'Failed to create update',
+        type: 'error'
+      });
     }
   };
 
@@ -131,6 +131,7 @@ export function UpdateForm({ onSubmit, onCancel, isSubmitting = false }: UpdateF
             Update Image (Optional)
           </label>
           <ImageUpload
+            label="Update Image (Optional)"
             value={formData.imageUrl || ''}
             onChange={(url) => handleInputChange('imageUrl', url)}
             disabled={isSubmitting}

@@ -8,7 +8,7 @@ import { ShareSection } from '../components/ShareSection';
 import { CampaignUpdates } from '../components/CampaignUpdates';
 import { useAuth } from '../contexts/AuthContext';
 import { useViewTracking } from '../hooks/useViewTracking';
-import { copyCampaignUrl, copyToClipboard } from '../utils/clipboard';
+import { copyToClipboard } from '../utils/clipboard';
 import { useNotification } from '../hooks/useNotification';
 import styles from './CampaignDetails.module.css';
 
@@ -118,9 +118,9 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
   const handleCopyPaymentInfo = async (text: string, label: string) => {
     const success = await copyToClipboard(text);
     if (success) {
-      showNotification(`${label} copied to clipboard!`, 'success');
+      showNotification({ message: `${label} copied to clipboard!`, type: 'success' });
     } else {
-      showNotification('Failed to copy to clipboard', 'error');
+      showNotification({ message: 'Failed to copy to clipboard', type: 'error' });
     }
   };
 

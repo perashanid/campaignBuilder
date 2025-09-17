@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
-import { FormState, FormValidation } from '../types/form';
+import { FormState, ValidationRules, ValidationError } from '../types/form';
 import { validateField, validateForm } from '../utils/validation';
 
 export interface UseFormOptions<T> {
   initialData: T;
-  validationRules?: FormValidation;
+  validationRules?: ValidationRules;
   onSubmit?: (data: T) => Promise<void> | void;
 }
 
@@ -21,35 +21,36 @@ export interface UseFormReturn<T> {
 
 export function useForm<T extends Record<string, any>>({
   initialData,
-  validationRules = {},
+  validationRules = {} as ValidationRules,
   onSubmit,
 }: UseFormOptions<T>): UseFormReturn<T> {
   const [formState, setFormState] = useState<FormState<T>>({
-    data: { ...initialData },
+    fields: {},
+    values: { ...initialData },
     errors: [],
     isSubmitting: false,
     isValid: true,
   });
 
   const updateField = useCallback((field: keyof T, value: any) => {
-    setFormState(prev => ({
+    setFormState((prev: FormState<T>) => ({
       ...prev,
-      data: {
-        ...prev.data,
+      values: {
+        ...prev.values,
         [field]: value,
       },
       // Clear field error when user starts typing
-      errors: prev.errors.filter(error => error.field !== field as string),
+      errors: prev.errors.filter((error: ValidationError) => error.field !== field as string),
     }));
   }, []);
 
   const validateSingleField = useCallback((field: keyof T) => {
     const fieldName = field as string;
-    const value = formState.data[field];
+    const value = formState.values[field];
     const error = validateField(fieldName, value, validationRules);
     
-    setFormState(prev => {
-      const newErrors = prev.errors.filter(e => e.field !== fieldName);
+    setFormState((prev: FormState<T>) => {
+      const newErrors = prev.errors.filter((e: ValidationError) => e.field !== fieldName);
       if (error) {
         newErrors.push({ field: fieldName, message: error });
       }
@@ -60,24 +61,25 @@ export function useForm<T extends Record<string, any>>({
         isValid: newErrors.length === 0,
       };
     });
-  }, [formState.data, validationRules]);
+  }, [formState.values, validationRules]);
 
   const validateEntireForm = useCallback((): boolean => {
-    const errors = validateForm(formState.data, validationRules);
+    const errors = validateForm(formState.values, validationRules);
     const isValid = errors.length === 0;
     
-    setFormState(prev => ({
+    setFormState((prev: FormState<T>) => ({
       ...prev,
       errors,
       isValid,
     }));
     
     return isValid;
-  }, [formState.data, validationRules]);
+  }, [formState.values, validationRules]);
 
   const resetForm = useCallback(() => {
     setFormState({
-      data: { ...initialData },
+      fields: {},
+      values: { ...initialData },
       errors: [],
       isSubmitting: false,
       isValid: true,
@@ -97,25 +99,25 @@ export function useForm<T extends Record<string, any>>({
       return;
     }
 
-    setFormState(prev => ({ ...prev, isSubmitting: true }));
+    setFormState((prev: FormState<T>) => ({ ...prev, isSubmitting: true }));
 
     try {
-      await onSubmit(formState.data);
+      await onSubmit(formState.values);
     } catch (error) {
       console.error('Form submission error:', error);
       // You could add error handling here
     } finally {
-      setFormState(prev => ({ ...prev, isSubmitting: false }));
+      setFormState((prev: FormState<T>) => ({ ...prev, isSubmitting: false }));
     }
-  }, [formState.data, onSubmit, validateEntireForm]);
+  }, [formState.values, onSubmit, validateEntireForm]);
 
   const getFieldError = useCallback((field: keyof T): string | undefined => {
-    const error = formState.errors.find(e => e.field === field as string);
+    const error = formState.errors.find((e: ValidationError) => e.field === field as string);
     return error?.message;
   }, [formState.errors]);
 
   const isFieldValid = useCallback((field: keyof T): boolean => {
-    return !formState.errors.some(e => e.field === field as string);
+    return !formState.errors.some((e: ValidationError) => e.field === field as string);
   }, [formState.errors]);
 
   return {

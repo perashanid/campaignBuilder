@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { LoginCredentials } from '../types/user';
-import { GoogleLoginButton } from '../components/GoogleLoginButton';
+
 import styles from './Login.module.css';
 
 export function Login() {
@@ -26,13 +26,13 @@ export function Login() {
 
     try {
       await login(credentials);
-      showNotification('Login successful!', 'success');
+      showNotification({ message: 'Login successful!', type: 'success' });
       navigate(from, { replace: true });
     } catch (error) {
-      showNotification(
-        error instanceof Error ? error.message : 'Login failed',
-        'error'
-      );
+      showNotification({
+        message: error instanceof Error ? error.message : 'Login failed',
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -49,16 +49,7 @@ export function Login() {
         <h1 className={styles.title}>Welcome Back</h1>
         <p className={styles.subtitle}>Sign in to manage your campaigns</p>
 
-        <div className={styles.googleLogin}>
-          <GoogleLoginButton 
-            text="signin_with" 
-            disabled={isSubmitting}
-          />
-        </div>
 
-        <div className={styles.divider}>
-          <span>or</span>
-        </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>

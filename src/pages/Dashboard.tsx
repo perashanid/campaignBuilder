@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
@@ -24,7 +24,7 @@ export function Dashboard() {
       const allCampaigns = await apiService.getUserCampaigns();
       setCampaigns(allCampaigns);
     } catch (error) {
-      showNotification('Failed to load campaigns', 'error');
+      showNotification({ message: 'Failed to load campaigns', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -38,9 +38,9 @@ export function Dashboard() {
     try {
       await apiService.deleteCampaign(campaignId);
       setCampaigns(prev => prev.filter(c => c.id !== campaignId));
-      showNotification('Campaign deleted successfully', 'success');
+      showNotification({ message: 'Campaign deleted successfully', type: 'success' });
     } catch (error) {
-      showNotification('Failed to delete campaign', 'error');
+      showNotification({ message: 'Failed to delete campaign', type: 'error' });
     }
   };
 
@@ -54,12 +54,12 @@ export function Dashboard() {
             : c
         )
       );
-      showNotification(
-        `Campaign ${!isHidden ? 'hidden' : 'made visible'} successfully`,
-        'success'
-      );
+      showNotification({
+        message: `Campaign ${!isHidden ? 'hidden' : 'made visible'} successfully`,
+        type: 'success'
+      });
     } catch (error) {
-      showNotification('Failed to update campaign visibility', 'error');
+      showNotification({ message: 'Failed to update campaign visibility', type: 'error' });
     }
   };
 
