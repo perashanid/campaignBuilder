@@ -52,7 +52,7 @@ async function generateUniqueSlug(title: string): Promise<string> {
 const app = new Hono<{ Variables: Variables }>();
 
 // Get user's campaigns (protected)
-app.get('/user', authenticateUser(), async (c) => {
+app.get('/user', authenticateUser, async (c) => {
   try {
     const user = c.get('user');
     
@@ -97,7 +97,7 @@ app.get('/user', authenticateUser(), async (c) => {
 });
 
 // Create new campaign (protected)
-app.post('/', authenticateUser(), async (c) => {
+app.post('/', authenticateUser, async (c) => {
   const client = await pool.connect();
   
   try {
@@ -470,7 +470,7 @@ app.patch('/:id/progress', async (c) => {
 });
 
 // Update campaign (protected)
-app.put('/:id', authenticateUser(), async (c) => {
+app.put('/:id', authenticateUser, async (c) => {
   const client = await pool.connect();
   
   try {
@@ -579,7 +579,7 @@ app.put('/:id', authenticateUser(), async (c) => {
 });
 
 // Delete campaign (protected)
-app.delete('/:id', authenticateUser(), async (c) => {
+app.delete('/:id', authenticateUser, async (c) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
@@ -613,7 +613,7 @@ app.delete('/:id', authenticateUser(), async (c) => {
 });
 
 // Update campaign visibility (protected)
-app.patch('/:id/visibility', authenticateUser(), async (c) => {
+app.patch('/:id/visibility', authenticateUser, async (c) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
