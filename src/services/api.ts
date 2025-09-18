@@ -6,8 +6,8 @@ const isProduction = window.location.hostname.includes('onrender.com') ||
                     window.location.hostname.includes('campaignbuilder-frontend');
 
 const API_BASE_URL = isProduction 
-  ? 'https://campaignbuilder-backend.onrender.com/api'
-  : 'http://localhost:3001/api';
+  ? 'https://campaignbuilder-backend.onrender.com'
+  : 'http://localhost:3001';
 
 
 
@@ -28,7 +28,7 @@ export interface CreateCampaignResponse {
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${API_BASE_URL}/api${endpoint}`;
 
     console.log('🌐 Making API request to:', url);
 
