@@ -64,7 +64,7 @@ class UrlService {
     }
 
     const baseUrl = this.getBaseUrl();
-    return `${baseUrl}/campaign/${campaignId}`;
+    return `${baseUrl}/#/campaign/${campaignId}`;
   }
 
   /**
