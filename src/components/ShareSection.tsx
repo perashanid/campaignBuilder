@@ -24,7 +24,8 @@ export function ShareSection({ campaign }: ShareSectionProps) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate campaign URL';
       setUrlError(errorMessage);
       // Use the same fallback logic as the clipboard utility
-      setCampaignUrl(`${window.location.origin}/campaign/${campaign.id}`);
+      const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
+      setCampaignUrl(`${baseUrl}/campaign/${campaign.id}`);
       console.error('❌ URL generation error:', error);
     }
   }, [campaign.id]);

@@ -8,8 +8,9 @@ export function generateCampaignUrl(campaignId: string): string {
     return urlService.generateCampaignUrl(campaignId);
   } catch (error) {
     console.error('❌ Failed to generate campaign URL:', error);
-    // Fallback to current origin if URL service fails
-    return `${window.location.origin}/campaign/${campaignId}`;
+    // Fallback using environment variable or current origin
+    const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
+    return `${baseUrl}/campaign/${campaignId}`;
   }
 }
 
@@ -98,8 +99,9 @@ export async function copyCampaignUrl(campaignId: string): Promise<ShareResult> 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('❌ Campaign URL copy failed:', error);
     
-    // Try to generate URL with fallback method
-    const fallbackUrl = `${window.location.origin}/campaign/${campaignId}`;
+    // Try to generate URL with fallback method using environment variable
+    const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
+    const fallbackUrl = `${baseUrl}/campaign/${campaignId}`;
     
     return {
       success: false,

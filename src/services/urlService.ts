@@ -25,22 +25,29 @@ class UrlService {
   }
 
   /**
-   * Load URL configuration with auto-detection
+   * Load URL configuration with environment variables
    */
   private loadConfiguration(): UrlConfig {
-    // Auto-detect production environment
-    const isProduction = typeof window !== 'undefined' && 
-                        (window.location.hostname.includes('onrender.com') || 
-                         window.location.hostname.includes('campaignbuilder-frontend'));
+    // Get environment variables
+    const envBaseUrl = import.meta.env.VITE_BASE_URL;
+    const envApiUrl = import.meta.env.VITE_API_URL;
+    const envEnvironment = import.meta.env.VITE_ENVIRONMENT;
 
-    // Set URLs based on environment
-    const finalBaseUrl = isProduction 
-      ? 'https://campaignbuilder-frontend.onrender.com'
-      : 'http://localhost:3000';
+    // Auto-detect production environment if not specified
+    const isProduction = envEnvironment === 'production' || 
+                        (typeof window !== 'undefined' && 
+                         window.location.hostname.includes('onrender.com'));
 
-    const finalApiUrl = isProduction
-      ? 'https://campaignbuilder-backend.onrender.com/api'
-      : 'http://localhost:3001/api';
+    // Use environment variables with fallbacks
+    const finalBaseUrl = envBaseUrl || 
+                        (isProduction 
+                          ? 'https://campaignbuilder.onrender.com'
+                          : 'http://localhost:3000');
+
+    const finalApiUrl = envApiUrl || 
+                       (isProduction
+                         ? 'https://campaignbuilder-backend.onrender.com'
+                         : 'http://localhost:3001');
 
     return {
       baseUrl: finalBaseUrl,
@@ -64,7 +71,8 @@ class UrlService {
     }
 
     const baseUrl = this.getBaseUrl();
-    return `${baseUrl}/#/campaign/${campaignId}`;
+    // Generate clean URL without hash prefix since _redirects handles routing
+    return `${baseUrl}/campaign/${campaignId}`;
   }
 
   /**
