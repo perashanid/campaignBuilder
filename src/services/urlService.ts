@@ -71,8 +71,8 @@ class UrlService {
     }
 
     const baseUrl = this.getBaseUrl();
-    // Generate clean URL without hash prefix since _redirects handles routing
-    return `${baseUrl}/campaign/${campaignId}`;
+    // Generate URL with hash prefix for HashRouter
+    return `${baseUrl}/#/campaign/${campaignId}`;
   }
 
   /**

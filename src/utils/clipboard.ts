@@ -10,7 +10,7 @@ export function generateCampaignUrl(campaignId: string): string {
     console.error('❌ Failed to generate campaign URL:', error);
     // Fallback using environment variable or current origin
     const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
-    return `${baseUrl}/campaign/${campaignId}`;
+    return `${baseUrl}/#/campaign/${campaignId}`;
   }
 }
 
@@ -101,7 +101,7 @@ export async function copyCampaignUrl(campaignId: string): Promise<ShareResult> 
     
     // Try to generate URL with fallback method using environment variable
     const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
-    const fallbackUrl = `${baseUrl}/campaign/${campaignId}`;
+    const fallbackUrl = `${baseUrl}/#/campaign/${campaignId}`;
     
     return {
       success: false,
