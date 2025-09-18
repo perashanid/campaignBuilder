@@ -209,7 +209,128 @@ app.post('/', authenticateUser, async (c) => {
   }
 });
 
-// Get campaign by ID
+// Get all campaigns (public, excluding hidden)
+app.get('/', async (c) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, title, description, type, main_image_url, created_at,
+        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
+        view_count, is_hidden
+      FROM campaigns 
+      WHERE is_hidden = FALSE OR is_hidden IS NULL
+      ORDER BY created_at DESC
+    `);
+    
+    const formattedCampaigns = result.rows.map((campaign: any) => ({
+      id: campaign.id,
+      title: campaign.title,
+      description: campaign.description,
+      type: campaign.type,
+      mainImage: campaign.main_image_url,
+      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
+      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
+      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      hospitalInfo: campaign.type === 'blood-donation' ? {
+        name: campaign.hospital_name,
+        address: campaign.hospital_address,
+      } : undefined,
+      urgencyLevel: campaign.urgency_level,
+      viewCount: campaign.view_count || 0,
+    }));
+
+    return c.json(formattedCampaigns);
+  } catch (error) {
+    console.error('Error fetching campaigns:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch campaigns' 
+      } 
+    }, 500);
+  }
+});
+
+// Get most visited campaigns (MUST be before /:id route)
+app.get('/most-visited', async (c) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, title, description, type, main_image_url, created_at, view_count,
+        target_amount, current_amount, hospital_name, hospital_address, urgency_level
+      FROM campaigns 
+      WHERE is_hidden = FALSE OR is_hidden IS NULL
+      ORDER BY COALESCE(view_count, 0) DESC, created_at DESC
+      LIMIT 6
+    `);
+    
+    const formattedCampaigns = result.rows.map((campaign: any) => ({
+      id: campaign.id,
+      title: campaign.title,
+      description: campaign.description,
+      type: campaign.type,
+      mainImage: campaign.main_image_url,
+      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
+      viewCount: campaign.view_count || 0,
+      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
+      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      hospitalInfo: campaign.type === 'blood-donation' ? {
+        name: campaign.hospital_name,
+        address: campaign.hospital_address,
+      } : undefined,
+      urgencyLevel: campaign.urgency_level,
+    }));
+
+    return c.json(formattedCampaigns);
+  } catch (error) {
+    console.error('Error fetching most visited campaigns:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch most visited campaigns' 
+      } 
+    }, 500);
+  }
+});
+
+// Increment campaign view count (MUST be before /:id route)
+app.post('/:id/view', async (c) => {
+  try {
+    const id = c.req.param('id');
+    
+    const result = await pool.query(`
+      UPDATE campaigns 
+      SET view_count = COALESCE(view_count, 0) + 1
+      WHERE id = $1
+      RETURNING view_count
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
+    }
+
+    return c.json({
+      success: true,
+      viewCount: result.rows[0].view_count
+    });
+
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to increment view count' 
+      } 
+    }, 500);
+  }
+});
+
+// Get campaign by ID (MUST be after specific routes like /most-visited)
 app.get('/:id', async (c) => {
   try {
     const id = c.req.param('id');
@@ -286,127 +407,6 @@ app.get('/:id', async (c) => {
       error: { 
         code: 'INTERNAL_ERROR', 
         message: 'Failed to fetch campaign' 
-      } 
-    }, 500);
-  }
-});
-
-// Get all campaigns (public, excluding hidden)
-app.get('/', async (c) => {
-  try {
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, type, main_image_url, created_at,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
-        view_count, is_hidden
-      FROM campaigns 
-      WHERE is_hidden = FALSE OR is_hidden IS NULL
-      ORDER BY created_at DESC
-    `);
-    
-    const formattedCampaigns = result.rows.map((campaign: any) => ({
-      id: campaign.id,
-      title: campaign.title,
-      description: campaign.description,
-      type: campaign.type,
-      mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
-      hospitalInfo: campaign.type === 'blood-donation' ? {
-        name: campaign.hospital_name,
-        address: campaign.hospital_address,
-      } : undefined,
-      urgencyLevel: campaign.urgency_level,
-      viewCount: campaign.view_count || 0,
-    }));
-
-    return c.json(formattedCampaigns);
-  } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    return c.json({ 
-      error: { 
-        code: 'INTERNAL_ERROR', 
-        message: 'Failed to fetch campaigns' 
-      } 
-    }, 500);
-  }
-});
-
-// Increment campaign view count
-app.post('/:id/view', async (c) => {
-  try {
-    const id = c.req.param('id');
-    
-    const result = await pool.query(`
-      UPDATE campaigns 
-      SET view_count = COALESCE(view_count, 0) + 1
-      WHERE id = $1
-      RETURNING view_count
-    `, [id]);
-
-    if (result.rows.length === 0) {
-      return c.json({ 
-        error: { 
-          code: 'NOT_FOUND', 
-          message: 'Campaign not found' 
-        } 
-      }, 404);
-    }
-
-    return c.json({
-      success: true,
-      viewCount: result.rows[0].view_count
-    });
-
-  } catch (error) {
-    console.error('Error incrementing view count:', error);
-    return c.json({ 
-      error: { 
-        code: 'INTERNAL_ERROR', 
-        message: 'Failed to increment view count' 
-      } 
-    }, 500);
-  }
-});
-
-// Get most visited campaigns
-app.get('/most-visited', async (c) => {
-  try {
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, type, main_image_url, created_at, view_count,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level
-      FROM campaigns 
-      WHERE is_hidden = FALSE OR is_hidden IS NULL
-      ORDER BY COALESCE(view_count, 0) DESC, created_at DESC
-      LIMIT 6
-    `);
-    
-    const formattedCampaigns = result.rows.map((campaign: any) => ({
-      id: campaign.id,
-      title: campaign.title,
-      description: campaign.description,
-      type: campaign.type,
-      mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      viewCount: campaign.view_count || 0,
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
-      hospitalInfo: campaign.type === 'blood-donation' ? {
-        name: campaign.hospital_name,
-        address: campaign.hospital_address,
-      } : undefined,
-      urgencyLevel: campaign.urgency_level,
-    }));
-
-    return c.json(formattedCampaigns);
-  } catch (error) {
-    console.error('Error fetching most visited campaigns:', error);
-    return c.json({ 
-      error: { 
-        code: 'INTERNAL_ERROR', 
-        message: 'Failed to fetch most visited campaigns' 
       } 
     }, 500);
   }
