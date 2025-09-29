@@ -90,19 +90,31 @@ CREATE TRIGGER update_campaigns_updated_at
 `;
 
 async function migrate() {
-  const client = await pool.connect();
+  let client;
   
   try {
+    console.log('🔄 Connecting to database...');
+    client = await pool.connect();
+    console.log('✅ Connected to database');
+    
     console.log('🔄 Running database migrations...');
     await client.query(createTables);
     console.log('✅ Database migrations completed successfully');
     
   } catch (error) {
     console.error('❌ Migration failed:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
     throw error;
   } finally {
-    client.release();
-    await pool.end();
+    if (client) {
+      client.release();
+    }
+    // Only end the pool if this is run as a standalone script
+    if (import.meta.url === `file://${process.argv[1]}`) {
+      await pool.end();
+    }
   }
 }
 

@@ -1,13 +1,12 @@
 import { Campaign, CampaignFormData } from '../types/campaign';
 import { authService } from './authService';
 
-// Auto-detect environment and use appropriate API URL
-const isProduction = window.location.hostname.includes('onrender.com') || 
-                    window.location.hostname.includes('campaignbuilder-frontend');
-
-const API_BASE_URL = isProduction 
-  ? 'https://campaignbuilder-backend.onrender.com'
-  : 'http://localhost:3001';
+// Use environment variable or fallback to appropriate URL
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL
+  : import.meta.env.DEV 
+    ? ''  // Use Vite proxy in development (no base URL needed)
+    : 'https://campaignbuilder-backend.onrender.com';
 
 
 
