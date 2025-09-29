@@ -654,4 +654,84 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
   }
 });
 
+// Get platform statistics
+app.get('/stats/platform', async (c) => {
+  try {
+    // Get campaign statistics
+    const campaignStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_campaigns,
+        COUNT(CASE WHEN type = 'fundraising' THEN 1 END) as fundraising_campaigns,
+        COUNT(CASE WHEN type = 'blood-donation' THEN 1 END) as blood_donation_campaigns,
+        COUNT(CASE WHEN is_hidden = FALSE OR is_hidden IS NULL THEN 1 END) as active_campaigns,
+        COALESCE(SUM(view_count), 0) as total_views,
+        COALESCE(SUM(CASE WHEN type = 'fundraising' THEN current_amount ELSE 0 END), 0) as total_funds_raised,
+        COALESCE(AVG(CASE WHEN type = 'fundraising' AND target_amount > 0 THEN (current_amount / target_amount) * 100 END), 0) as avg_funding_progress
+      FROM campaigns
+    `);
+
+    // Get user statistics
+    const userStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_users,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as new_users_30_days,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_users_7_days
+      FROM users
+    `);
+
+    // Get campaigns completed (reached 100% funding)
+    const completedCampaigns = await pool.query(`
+      SELECT COUNT(*) as completed_campaigns
+      FROM campaigns 
+      WHERE type = 'fundraising' 
+        AND target_amount > 0 
+        AND current_amount >= target_amount
+    `);
+
+    // Get recent activity stats
+    const recentActivity = await pool.query(`
+      SELECT 
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as campaigns_this_week,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as campaigns_this_month
+      FROM campaigns
+    `);
+
+    const stats = campaignStats.rows[0];
+    const users = userStats.rows[0];
+    const completed = completedCampaigns.rows[0];
+    const activity = recentActivity.rows[0];
+
+    return c.json({
+      campaigns: {
+        total: parseInt(stats.total_campaigns),
+        fundraising: parseInt(stats.fundraising_campaigns),
+        bloodDonation: parseInt(stats.blood_donation_campaigns),
+        active: parseInt(stats.active_campaigns),
+        completed: parseInt(completed.completed_campaigns),
+        thisWeek: parseInt(activity.campaigns_this_week),
+        thisMonth: parseInt(activity.campaigns_this_month),
+      },
+      users: {
+        total: parseInt(users.total_users),
+        newThisWeek: parseInt(users.new_users_7_days),
+        newThisMonth: parseInt(users.new_users_30_days),
+      },
+      engagement: {
+        totalViews: parseInt(stats.total_views),
+        totalFundsRaised: parseFloat(stats.total_funds_raised) || 0,
+        averageFundingProgress: parseFloat(stats.avg_funding_progress) || 0,
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching platform statistics:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch platform statistics' 
+      } 
+    }, 500);
+  }
+});
+
 export default app;

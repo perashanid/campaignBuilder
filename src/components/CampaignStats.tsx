@@ -1,88 +1,106 @@
 import { useEffect, useState } from 'react';
-import { apiService } from '../services/api';
-import { FundraisingCampaign } from '../types/campaign';
+import { apiService, PlatformStats } from '../services/api';
 import styles from './CampaignStats.module.css';
-
-interface CampaignStatistics {
-  totalCampaigns: number;
-  fundraisingCampaigns: number;
-  bloodDonationCampaigns: number;
-  totalFundsRaised: number;
-  averageFundingProgress: number;
-}
 
 const STATS_UPDATE_INTERVAL = 30000; // 30 seconds
 
 export function CampaignStats() {
-  const [stats, setStats] = useState<CampaignStatistics>({
-    totalCampaigns: 0,
-    fundraisingCampaigns: 0,
-    bloodDonationCampaigns: 0,
-    totalFundsRaised: 0,
-    averageFundingProgress: 0,
-  });
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const calculateStats = async () => {
+    const loadStats = async () => {
       try {
-        const campaigns = await apiService.getAllCampaigns();
-      
-      const fundraisingCampaigns = campaigns.filter(c => c.type === 'fundraising') as FundraisingCampaign[];
-      const bloodDonationCampaigns = campaigns.filter(c => c.type === 'blood-donation');
-      
-      const totalFundsRaised = calculateTotalFundsRaised(fundraisingCampaigns);
-      const averageFundingProgress = calculateAverageFundingProgress(fundraisingCampaigns);
-
-        setStats({
-          totalCampaigns: campaigns.length,
-          fundraisingCampaigns: fundraisingCampaigns.length,
-          bloodDonationCampaigns: bloodDonationCampaigns.length,
-          totalFundsRaised,
-          averageFundingProgress,
-        });
+        setLoading(true);
+        const platformStats = await apiService.getPlatformStats();
+        setStats(platformStats);
       } catch (error) {
-        console.error('Failed to load campaign stats:', error);
+        console.error('Failed to load platform stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    calculateStats();
-    const interval = setInterval(calculateStats, STATS_UPDATE_INTERVAL);
+    loadStats();
+    const interval = setInterval(loadStats, STATS_UPDATE_INTERVAL);
     
     return () => clearInterval(interval);
   }, []);
 
+  if (loading || !stats) {
+    return (
+      <div className={styles.statsContainer}>
+        <h2 className={styles.title}>Platform Statistics</h2>
+        <div className={styles.loading}>Loading statistics...</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.statsContainer}>
       <h2 className={styles.title}>Platform Statistics</h2>
+      
+      {/* Main Stats Grid */}
       <div className={styles.statsGrid}>
-        <StatCard number={stats.totalCampaigns} label="Total Campaigns" />
-        <StatCard number={stats.fundraisingCampaigns} label="Fundraising Campaigns" />
-        <StatCard number={stats.bloodDonationCampaigns} label="Blood Donation Campaigns" />
-        <StatCard number={formatCurrency(stats.totalFundsRaised)} label="Total Funds Raised" />
-        <StatCard number={`${stats.averageFundingProgress.toFixed(1)}%`} label="Average Progress" />
+        <StatCard 
+          number={stats.campaigns.total} 
+          label="Total Campaigns" 
+          subtitle={`${stats.campaigns.active} active`}
+        />
+        <StatCard 
+          number={stats.users.total} 
+          label="Registered Users" 
+          subtitle={`+${stats.users.newThisMonth} this month`}
+        />
+        <StatCard 
+          number={formatNumber(stats.engagement.totalViews)} 
+          label="Total Views" 
+          subtitle="Platform engagement"
+        />
+        <StatCard 
+          number={stats.campaigns.completed} 
+          label="Campaigns Completed" 
+          subtitle="Successfully funded"
+        />
+      </div>
+
+      {/* Secondary Stats */}
+      <div className={styles.secondaryStats}>
+        <div className={styles.statSection}>
+          <h3>Campaign Types</h3>
+          <div className={styles.miniStatsGrid}>
+            <StatCard number={stats.campaigns.fundraising} label="Fundraising" />
+            <StatCard number={stats.campaigns.bloodDonation} label="Blood Donation" />
+          </div>
+        </div>
+        
+        <div className={styles.statSection}>
+          <h3>Financial Impact</h3>
+          <div className={styles.miniStatsGrid}>
+            <StatCard 
+              number={formatCurrency(stats.engagement.totalFundsRaised)} 
+              label="Total Raised" 
+            />
+            <StatCard 
+              number={`${stats.engagement.averageFundingProgress.toFixed(1)}%`} 
+              label="Avg Progress" 
+            />
+          </div>
+        </div>
+
+        <div className={styles.statSection}>
+          <h3>Recent Activity</h3>
+          <div className={styles.miniStatsGrid}>
+            <StatCard number={stats.campaigns.thisWeek} label="This Week" />
+            <StatCard number={stats.campaigns.thisMonth} label="This Month" />
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// Helper functions moved outside component for better testability
-function calculateTotalFundsRaised(fundraisingCampaigns: FundraisingCampaign[]): number {
-  return fundraisingCampaigns.reduce((total, campaign) => {
-    return total + (campaign.currentAmount || 0);
-  }, 0);
-}
-
-function calculateAverageFundingProgress(fundraisingCampaigns: FundraisingCampaign[]): number {
-  if (fundraisingCampaigns.length === 0) return 0;
-  
-  const totalProgress = fundraisingCampaigns.reduce((total, campaign) => {
-    const progress = ((campaign.currentAmount || 0) / campaign.targetAmount) * 100;
-    return total + progress;
-  }, 0);
-  
-  return totalProgress / fundraisingCampaigns.length;
-}
-
+// Helper functions
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -92,17 +110,28 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Extracted StatCard component for better reusability
+function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
+
+// Enhanced StatCard component
 interface StatCardProps {
   number: string | number;
   label: string;
+  subtitle?: string;
 }
 
-function StatCard({ number, label }: StatCardProps) {
+function StatCard({ number, label, subtitle }: StatCardProps) {
   return (
     <div className={styles.statCard}>
       <div className={styles.statNumber}>{number}</div>
       <div className={styles.statLabel}>{label}</div>
+      {subtitle && <div className={styles.statSubtitle}>{subtitle}</div>}
     </div>
   );
 }

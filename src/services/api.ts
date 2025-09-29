@@ -25,6 +25,28 @@ export interface CreateCampaignResponse {
   campaign: Campaign;
 }
 
+export interface PlatformStats {
+  campaigns: {
+    total: number;
+    fundraising: number;
+    bloodDonation: number;
+    active: number;
+    completed: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
+  users: {
+    total: number;
+    newThisWeek: number;
+    newThisMonth: number;
+  };
+  engagement: {
+    totalViews: number;
+    totalFundsRaised: number;
+    averageFundingProgress: number;
+  };
+}
+
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}/api${endpoint}`;
@@ -118,6 +140,10 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify({ isHidden }),
     });
+  }
+
+  async getPlatformStats(): Promise<PlatformStats> {
+    return this.request('/campaigns/stats/platform');
   }
 
   async getCampaignUpdates(campaignId: string): Promise<import('../types/campaign').CampaignUpdate[]> {
