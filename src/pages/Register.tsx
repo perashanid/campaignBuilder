@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiUser, FiMail, FiLock, FiUserPlus, FiLogIn } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { RegisterCredentials } from '../types/user';
-
+import { AnimatedButton } from '../components/AnimatedButton';
 import styles from './Register.module.css';
 
 export function Register() {
@@ -50,18 +52,34 @@ export function Register() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.registerCard}>
-        <h1 className={styles.title}>Create Account</h1>
-        <p className={styles.subtitle}>Join us to start creating campaigns</p>
+      <motion.div 
+        className={styles.registerCard}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h1 className={styles.title}>Create Account</h1>
+          <p className={styles.subtitle}>Join us to start creating campaigns</p>
+        </motion.div>
 
-
-
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <motion.form 
+          onSubmit={handleSubmit} 
+          className={styles.form}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className={styles.field}>
             <label htmlFor="name" className={styles.label}>
+              <FiUser className={styles.labelIcon} />
               Full Name
             </label>
-            <input
+            <motion.input
               type="text"
               id="name"
               name="name"
@@ -70,14 +88,16 @@ export function Register() {
               required
               className={styles.input}
               placeholder="Enter your full name"
+              whileFocus={{ scale: 1.01 }}
             />
           </div>
 
           <div className={styles.field}>
             <label htmlFor="email" className={styles.label}>
+              <FiMail className={styles.labelIcon} />
               Email Address
             </label>
-            <input
+            <motion.input
               type="email"
               id="email"
               name="email"
@@ -86,14 +106,16 @@ export function Register() {
               required
               className={styles.input}
               placeholder="Enter your email"
+              whileFocus={{ scale: 1.01 }}
             />
           </div>
 
           <div className={styles.field}>
             <label htmlFor="password" className={styles.label}>
+              <FiLock className={styles.labelIcon} />
               Password
             </label>
-            <input
+            <motion.input
               type="password"
               id="password"
               name="password"
@@ -103,14 +125,16 @@ export function Register() {
               minLength={6}
               className={styles.input}
               placeholder="Create a password (min 6 characters)"
+              whileFocus={{ scale: 1.01 }}
             />
           </div>
 
           <div className={styles.field}>
             <label htmlFor="confirmPassword" className={styles.label}>
+              <FiLock className={styles.labelIcon} />
               Confirm Password
             </label>
-            <input
+            <motion.input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
@@ -119,26 +143,40 @@ export function Register() {
               required
               className={styles.input}
               placeholder="Confirm your password"
+              whileFocus={{ scale: 1.01 }}
             />
           </div>
 
-          <button
+          <AnimatedButton
             type="submit"
             disabled={isSubmitting}
-            className={styles.submitButton}
+            size="large"
           >
+            <FiUserPlus className={styles.buttonIcon} />
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
+          </AnimatedButton>
+        </motion.form>
 
-        <div className={styles.loginDivider}>
+        <motion.div 
+          className={styles.loginDivider}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
           <span>Already have an account?</span>
-        </div>
+        </motion.div>
 
-        <Link to="/login" className={styles.loginLink}>
-          Sign In
-        </Link>
-      </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Link to="/login" className={styles.loginLink}>
+            <FiLogIn className={styles.buttonIcon} />
+            Sign In
+          </Link>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

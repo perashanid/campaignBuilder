@@ -22,8 +22,10 @@
     "test:integration": "node -e \"import('./src/__tests__/urlSharing.integration.test.ts').then(m => m.runner.run())\""
   },
   "dependencies": {
+    "framer-motion": "^12.23.22",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^6.20.1"
   },
   "devDependencies": {

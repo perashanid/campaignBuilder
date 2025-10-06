@@ -1,4 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiHome, FiGrid, FiLayout, FiPlusCircle } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
 import styles from './Header.module.css';
@@ -21,30 +23,51 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
   };
 
   return (
-    <header 
+    <motion.header 
       className={`${styles.header} ${className}`}
       onMouseEnter={onMouseEnter}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
-          <h1 className={styles.logoText}>Campaign Platform</h1>
+          <motion.h1 
+            className={styles.logoText}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            Campaign Platform
+          </motion.h1>
         </Link>
         
         <nav className={styles.nav}>
-          <Link to="/" className={getNavLinkClass('/')}>
-            Home
-          </Link>
-          <Link to="/campaigns" className={getNavLinkClass('/campaigns')}>
-            Campaigns
-          </Link>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link to="/" className={getNavLinkClass('/')}>
+              <FiHome className={styles.navIcon} />
+              <span>Home</span>
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link to="/campaigns" className={getNavLinkClass('/campaigns')}>
+              <FiGrid className={styles.navIcon} />
+              <span>Campaigns</span>
+            </Link>
+          </motion.div>
           {isAuthenticated && (
             <>
-              <Link to="/dashboard" className={getNavLinkClass('/dashboard')}>
-                Dashboard
-              </Link>
-              <Link to="/create" className={getNavLinkClass('/create')}>
-                Create Campaign
-              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/dashboard" className={getNavLinkClass('/dashboard')}>
+                  <FiLayout className={styles.navIcon} />
+                  <span>Dashboard</span>
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/create" className={getNavLinkClass('/create')}>
+                  <FiPlusCircle className={styles.navIcon} />
+                  <span>Create</span>
+                </Link>
+              </motion.div>
             </>
           )}
         </nav>
@@ -54,22 +77,31 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
           {isAuthenticated ? (
             <div className={styles.userMenu}>
               <span className={styles.userName}>Hi, {user?.name}</span>
-              <button onClick={handleLogout} className={styles.logoutButton}>
+              <motion.button 
+                onClick={handleLogout} 
+                className={styles.logoutButton}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Logout
-              </button>
+              </motion.button>
             </div>
           ) : (
             <div className={styles.authButtons}>
-              <Link to="/login" className={styles.loginButton}>
-                Login
-              </Link>
-              <Link to="/register" className={styles.registerButton}>
-                Sign Up
-              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/login" className={styles.loginButton}>
+                  Login
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/register" className={styles.registerButton}>
+                  Sign Up
+                </Link>
+              </motion.div>
             </div>
           )}
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

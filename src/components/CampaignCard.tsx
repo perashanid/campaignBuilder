@@ -1,5 +1,6 @@
-
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiCalendar, FiMapPin, FiTrendingUp } from 'react-icons/fi';
 import { Campaign, FundraisingCampaign } from '../types/campaign';
 import styles from './CampaignCard.module.css';
 
@@ -47,18 +48,29 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
 
   return (
     <Link to={`/campaign/${campaign.id}`} className={styles.cardLink}>
-      <article className={styles.card}>
+      <motion.article 
+        className={styles.card}
+        whileHover={{ y: -8 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className={styles.imageContainer}>
-          <img
+          <motion.img
             src={campaign.mainImage}
             alt={campaign.title}
             className={styles.image}
             loading="lazy"
             onError={handleImageError}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
           />
-          <div className={`${styles.badge} ${styles[campaign.type]}`}>
+          <motion.div 
+            className={`${styles.badge} ${styles[campaign.type]}`}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             {campaign.type === 'fundraising' ? 'Fundraising' : 'Blood Donation'}
-          </div>
+          </motion.div>
         </div>
         
         <div className={styles.content}>
@@ -72,13 +84,17 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           {campaign.type === 'fundraising' && (
             <div className={styles.progress}>
               <div className={styles.progressBar}>
-                <div
+                <motion.div
                   className={styles.progressFill}
-                  style={{ width: `${getProgressPercentage(campaign)}%` }}
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${getProgressPercentage(campaign)}%` }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
                 />
               </div>
               <div className={styles.progressText}>
                 <span className={styles.raised}>
+                  <FiTrendingUp className={styles.icon} />
                   {formatAmount(campaign.currentAmount)} raised
                 </span>
                 <span className={styles.target}>
@@ -91,6 +107,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           {campaign.type === 'blood-donation' && (
             <div className={styles.hospitalInfo}>
               <div className={styles.hospitalName}>
+                <FiMapPin className={styles.icon} />
                 {campaign.hospitalInfo.name}
               </div>
               <div className={`${styles.urgency} ${styles[campaign.urgencyLevel]}`}>
@@ -101,11 +118,12 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           
           <div className={styles.footer}>
             <span className={styles.date}>
-              Created {formatDate(campaign.createdAt)}
+              <FiCalendar className={styles.icon} />
+              {formatDate(campaign.createdAt)}
             </span>
           </div>
         </div>
-      </article>
+      </motion.article>
     </Link>
   );
 }
