@@ -1,5 +1,6 @@
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { FaClipboard } from 'react-icons/fa';
 import { apiService } from '../services/api';
 import { FundraisingCampaign, BloodDonationCampaign } from '../types/campaign';
 import { ProgressTracker } from '../components/ProgressTracker';
@@ -153,7 +154,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
                 onClick={() => handleCopyPaymentInfo(campaign.paymentDetails.mobileBanking!, 'Mobile banking number')}
                 title="Copy to clipboard"
               >
-                📋
+                <FaClipboard />
               </button>
             </div>
           </div>
@@ -169,7 +170,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
                 onClick={() => handleCopyPaymentInfo(campaign.paymentDetails.bankAccount!.accountNumber, 'Account number')}
                 title="Copy to clipboard"
               >
-                📋
+                <FaClipboard />
               </button>
             </div>
             <div className={styles.paymentDetail}>
@@ -179,7 +180,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
                 onClick={() => handleCopyPaymentInfo(campaign.paymentDetails.bankAccount!.bankName, 'Bank name')}
                 title="Copy to clipboard"
               >
-                📋
+                <FaClipboard />
               </button>
             </div>
             <div className={styles.paymentDetail}>
@@ -189,7 +190,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
                 onClick={() => handleCopyPaymentInfo(campaign.paymentDetails.bankAccount!.accountHolder, 'Account holder name')}
                 title="Copy to clipboard"
               >
-                📋
+                <FaClipboard />
               </button>
             </div>
           </div>

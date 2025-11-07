@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Campaign } from '../types/campaign';
 import { ImageUpload } from '../components/ImageUpload';
 import { MultipleImageUpload } from '../components/MultipleImageUpload';
+import { AIWritingAssistant } from '../components/AIWritingAssistant';
 import { useCampaignForm } from '../hooks/useCampaignForm';
 import { copyCampaignUrl } from '../utils/clipboard';
 import styles from './FundraisingForm.module.css';
@@ -48,9 +49,9 @@ export function FundraisingForm({
     if (clipboardResult.success) {
       // For now, still using alert but with better messaging
       // In a real app, you'd use a toast notification system
-      alert(`✅ Campaign created successfully!\n\nThe campaign link has been copied to your clipboard. You can now share it with others to start receiving donations.`);
+      alert(`Campaign created successfully!\n\nThe campaign link has been copied to your clipboard. You can now share it with others to start receiving donations.`);
     } else {
-      alert(`✅ Campaign created successfully!\n\nYour campaign link:\n${campaignUrl}\n\nPlease copy this link manually to share with others.`);
+      alert(`Campaign created successfully!\n\nYour campaign link:\n${campaignUrl}\n\nPlease copy this link manually to share with others.`);
     }
   };
 
@@ -118,6 +119,12 @@ export function FundraisingForm({
               placeholder="Enter a compelling campaign title"
             />
             {errors.title && <span className={styles.errorText}>{errors.title}</span>}
+            <AIWritingAssistant
+              text={formData.title}
+              fieldType="title"
+              campaignType="fundraising"
+              onApply={(text) => updateField('title', text)}
+            />
           </div>
 
           <div className={styles.field}>
@@ -133,6 +140,12 @@ export function FundraisingForm({
               rows={6}
             />
             {errors.description && <span className={styles.errorText}>{errors.description}</span>}
+            <AIWritingAssistant
+              text={formData.description}
+              fieldType="description"
+              campaignType="fundraising"
+              onApply={(text) => updateField('description', text)}
+            />
           </div>
 
           <div className={styles.field}>

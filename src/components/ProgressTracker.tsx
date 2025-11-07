@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { FaDollarSign, FaCheckCircle } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi';
 import { FundraisingCampaign } from '../types/campaign';
 import { simulateProgressUpdate, getRandomUpdateInterval } from '../utils/dummyData';
 import { apiService } from '../services/api';
@@ -67,7 +69,7 @@ export function ProgressTracker({ campaign, onUpdate }: ProgressTrackerProps) {
         <h3 className={styles.title}>Fundraising Progress</h3>
         {isAnimating && (
           <span className={styles.updateIndicator}>
-            💰 New donation received!
+            <FaDollarSign /> New donation received!
           </span>
         )}
       </div>
@@ -86,7 +88,7 @@ export function ProgressTracker({ campaign, onUpdate }: ProgressTrackerProps) {
           </span>
           {isCompleted && (
             <span className={styles.completedBadge}>
-              ✓ Goal Reached!
+              <FaCheckCircle /> Goal Reached!
             </span>
           )}
         </div>
@@ -119,7 +121,7 @@ export function ProgressTracker({ campaign, onUpdate }: ProgressTrackerProps) {
 
       {isCompleted && (
         <div className={styles.completionMessage}>
-          🎉 This campaign has reached its fundraising goal! Thank you to all donors who made this possible.
+          <HiSparkles /> This campaign has reached its fundraising goal! Thank you to all donors who made this possible.
         </div>
       )}
     </div>

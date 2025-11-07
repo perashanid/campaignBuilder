@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FaChartBar } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { Campaign } from '../types/campaign';
@@ -114,6 +115,15 @@ export function Dashboard() {
           <h3>${stats.totalRaised.toLocaleString()}</h3>
           <p>Total Raised</p>
         </div>
+        <Link to="/analytics" className={styles.analyticsCard}>
+          <div className={styles.analyticsIcon}>
+            <FaChartBar />
+          </div>
+          <div className={styles.analyticsContent}>
+            <h3>View Analytics</h3>
+            <p>Get detailed insights and optimize performance</p>
+          </div>
+        </Link>
       </div>
 
       <div className={styles.content}>

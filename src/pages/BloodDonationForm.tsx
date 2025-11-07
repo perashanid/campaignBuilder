@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Campaign } from '../types/campaign';
 import { ImageUpload } from '../components/ImageUpload';
 import { MultipleImageUpload } from '../components/MultipleImageUpload';
+import { AIWritingAssistant } from '../components/AIWritingAssistant';
 import { useCampaignForm } from '../hooks/useCampaignForm';
 import { copyCampaignUrl } from '../utils/clipboard';
 import styles from './BloodDonationForm.module.css';
@@ -45,9 +46,9 @@ export function BloodDonationForm({
     const clipboardResult = await copyCampaignUrl(campaign.id);
     
     if (clipboardResult.success) {
-      alert(`🩸 Blood donation campaign created successfully!\n\nThe campaign link has been copied to your clipboard. Share it with potential donors to help save lives.`);
+      alert(`Blood donation campaign created successfully!\n\nThe campaign link has been copied to your clipboard. Share it with potential donors to help save lives.`);
     } else {
-      alert(`🩸 Blood donation campaign created successfully!\n\nYour campaign link:\n${campaignUrl}\n\nPlease copy this link manually to share with potential donors.`);
+      alert(`Blood donation campaign created successfully!\n\nYour campaign link:\n${campaignUrl}\n\nPlease copy this link manually to share with potential donors.`);
     }
   };
 
@@ -108,6 +109,12 @@ export function BloodDonationForm({
               placeholder="Enter a compelling campaign title"
             />
             {errors.title && <span className={styles.errorText}>{errors.title}</span>}
+            <AIWritingAssistant
+              text={formData.title}
+              fieldType="title"
+              campaignType="blood-donation"
+              onApply={(text) => updateField('title', text)}
+            />
           </div>
 
           <div className={styles.field}>
@@ -123,6 +130,12 @@ export function BloodDonationForm({
               rows={6}
             />
             {errors.description && <span className={styles.errorText}>{errors.description}</span>}
+            <AIWritingAssistant
+              text={formData.description}
+              fieldType="description"
+              campaignType="blood-donation"
+              onApply={(text) => updateField('description', text)}
+            />
           </div>
 
           <div className={styles.fieldRow}>

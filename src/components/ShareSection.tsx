@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FaExclamationTriangle } from 'react-icons/fa';
 import { Campaign } from '../types/campaign';
 import { copyCampaignUrl, generateCampaignUrl } from '../utils/clipboard';
 import { useNotification } from '../hooks/useNotification';
@@ -126,7 +127,7 @@ export function ShareSection({ campaign }: ShareSectionProps) {
 
       {urlError && (
         <div className={styles.errorMessage}>
-          <p>⚠️ URL generation issue: {urlError}</p>
+          <p><FaExclamationTriangle /> URL generation issue: {urlError}</p>
           <p>Using fallback URL. Sharing may still work.</p>
         </div>
       )}
