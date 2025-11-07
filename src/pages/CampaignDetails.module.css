@@ -71,7 +71,7 @@
 }
 
 .updateButton:hover {
-  background: rgba(16, 185, 129, 1);
+  background: rgba(5, 150, 105, 1);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
@@ -83,7 +83,7 @@
 }
 
 .editButton:hover {
-  background: rgba(59, 130, 246, 1);
+  background: rgba(37, 99, 235, 1);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
@@ -95,7 +95,7 @@
 }
 
 .visibilityButton:hover {
-  background: rgba(245, 158, 11, 1);
+  background: rgba(217, 119, 6, 1);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
@@ -107,7 +107,7 @@
 }
 
 .deleteButton:hover {
-  background: rgba(239, 68, 68, 1);
+  background: rgba(220, 38, 38, 1);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
@@ -312,4 +312,39 @@
   .campaignDetails:not(:has(.imageContainer)) .content {
     padding-top: 15vh;
   }
+}
+
+.editHistorySection {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+.historyToggleButton {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: var(--spacing-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.historyToggleButton:hover {
+  background: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.historyToggleButton:active {
+  transform: translateY(0);
 }

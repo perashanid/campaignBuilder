@@ -156,6 +156,12 @@ class ApiService {
       body: JSON.stringify(updateData),
     });
   }
+
+  async getCampaignEditHistory(
+    campaignId: string
+  ): Promise<import('../types/campaign').CampaignEditHistory[]> {
+    return this.request(`/campaigns/${campaignId}/edit-history`);
+  }
 }
 
 export const apiService = new ApiService();

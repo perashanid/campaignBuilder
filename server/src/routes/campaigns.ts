@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { getDB } from '../db/index.js';
-import { Campaign, PaymentDetails } from '../db/schema.js';
+import { Campaign, PaymentDetails, CampaignUpdate, CampaignEditHistory } from '../db/schema.js';
 import { authenticateUser } from './auth.js';
 import { Variables } from '../types/hono.js';
 import { ObjectId } from 'mongodb';
@@ -328,6 +328,198 @@ app.get('/stats/platform', async (c) => {
   }
 });
 
+// Get campaign updates (must come before /:id route)
+app.get('/:id/updates', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const db = getDB();
+    
+    // Verify campaign exists
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
+
+    if (!campaign) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
+    }
+
+    const campaignId = campaign._id!.toString();
+    const updates = await db.collection<CampaignUpdate>('campaign_updates')
+      .find({ campaign_id: campaignId })
+      .sort({ created_at: -1 })
+      .toArray();
+    
+    const formattedUpdates = updates.map((update) => ({
+      id: update._id!.toString(),
+      campaignId: update.campaign_id,
+      title: update.title,
+      description: update.description,
+      type: update.type,
+      imageUrl: update.image_url,
+      createdAt: update.created_at.toISOString(),
+      updatedAt: update.updated_at.toISOString(),
+    }));
+
+    return c.json(formattedUpdates);
+  } catch (error) {
+    console.error('Error fetching campaign updates:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch campaign updates' 
+      } 
+    }, 500);
+  }
+});
+
+// Create campaign update (must come before /:id route)
+app.post('/:id/updates', authenticateUser, async (c) => {
+  try {
+    const id = c.req.param('id');
+    const user = c.get('user');
+    const body = await c.req.json();
+    const db = getDB();
+    
+    // Verify campaign exists and belongs to user
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
+
+    if (!campaign) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
+    }
+
+    if (campaign.user_id !== user.id) {
+      return c.json({ 
+        error: { 
+          code: 'FORBIDDEN', 
+          message: 'You can only create updates for your own campaigns' 
+        } 
+      }, 403);
+    }
+
+    if (!body.title || !body.description || !body.type) {
+      return c.json({ 
+        error: { 
+          code: 'VALIDATION_ERROR', 
+          message: 'Missing required fields: title, description, type' 
+        } 
+      }, 400);
+    }
+
+    const now = new Date();
+    const campaignUpdate: Partial<CampaignUpdate> = {
+      campaign_id: campaign._id!.toString(),
+      title: body.title,
+      description: body.description,
+      type: body.type,
+      image_url: body.imageUrl || null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const result = await db.collection('campaign_updates').insertOne(campaignUpdate);
+
+    return c.json({
+      id: result.insertedId.toString(),
+      campaignId: campaignUpdate.campaign_id,
+      title: campaignUpdate.title,
+      description: campaignUpdate.description,
+      type: campaignUpdate.type,
+      imageUrl: campaignUpdate.image_url,
+      createdAt: campaignUpdate.created_at!.toISOString(),
+      updatedAt: campaignUpdate.updated_at!.toISOString(),
+    }, 201);
+
+  } catch (error) {
+    console.error('Error creating campaign update:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to create campaign update' 
+      } 
+    }, 500);
+  }
+});
+
+// Get campaign edit history (must come before /:id route)
+app.get('/:id/edit-history', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const db = getDB();
+    
+    // Verify campaign exists
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
+
+    if (!campaign) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
+    }
+
+    const campaignId = campaign._id!.toString();
+    const history = await db.collection<CampaignEditHistory>('campaign_edit_history')
+      .find({ campaign_id: campaignId })
+      .sort({ edited_at: -1 })
+      .toArray();
+    
+    // Get user info for each edit
+    const userIds = [...new Set(history.map(h => h.edited_by))];
+    const users = await db.collection('users').find({ 
+      _id: { $in: userIds.map(id => new ObjectId(id)) } 
+    }).toArray();
+    
+    const userMap = Object.fromEntries(
+      users.map(u => [u._id!.toString(), u.name])
+    );
+
+    const formattedHistory = history.map((edit) => ({
+      id: edit._id!.toString(),
+      campaignId: edit.campaign_id,
+      editedBy: {
+        id: edit.edited_by,
+        name: userMap[edit.edited_by] || 'Unknown User',
+      },
+      changes: edit.changes,
+      editedAt: edit.edited_at.toISOString(),
+    }));
+
+    return c.json(formattedHistory);
+  } catch (error) {
+    console.error('Error fetching campaign edit history:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch campaign edit history' 
+      } 
+    }, 500);
+  }
+});
+
 // Get campaign by ID
 app.get('/:id', async (c) => {
   try {
@@ -644,64 +836,141 @@ app.put('/:id', authenticateUser, async (c) => {
       }, 403);
     }
 
+    // Track changes for edit history
+    const changes: { field: string; old_value: any; new_value: any }[] = [];
+
     const updateData: any = {
-      title: body.title,
-      description: body.description,
-      main_image_url: body.mainImage || null,
-      additional_images: body.additionalImages || [],
       updated_at: new Date(),
     };
 
+    // Track title changes
+    if (body.title !== campaign.title) {
+      changes.push({ field: 'title', old_value: campaign.title, new_value: body.title });
+      updateData.title = body.title;
+    }
+
+    // Track description changes
+    if (body.description !== campaign.description) {
+      changes.push({ field: 'description', old_value: campaign.description, new_value: body.description });
+      updateData.description = body.description;
+    }
+
+    // Track image changes
+    if (body.mainImage !== campaign.main_image_url) {
+      changes.push({ field: 'main_image', old_value: campaign.main_image_url, new_value: body.mainImage });
+      updateData.main_image_url = body.mainImage || null;
+    }
+
+    const oldImages = JSON.stringify(campaign.additional_images || []);
+    const newImages = JSON.stringify(body.additionalImages || []);
+    if (oldImages !== newImages) {
+      changes.push({ field: 'additional_images', old_value: campaign.additional_images, new_value: body.additionalImages });
+      updateData.additional_images = body.additionalImages || [];
+    }
+
     if (body.type === 'fundraising') {
-      updateData.target_amount = body.targetAmount;
+      if (body.targetAmount !== campaign.target_amount) {
+        changes.push({ field: 'target_amount', old_value: campaign.target_amount, new_value: body.targetAmount });
+        updateData.target_amount = body.targetAmount;
+      }
     } else {
-      updateData.hospital_name = body.hospitalInfo?.name;
-      updateData.hospital_address = body.hospitalInfo?.address;
-      updateData.hospital_contact = body.hospitalInfo?.contactNumber;
-      updateData.hospital_email = body.hospitalInfo?.email;
-      updateData.blood_type = body.bloodType;
-      updateData.urgency_level = body.urgencyLevel || 'medium';
-      updateData.target_blood_units = body.targetBloodUnits || 0;
+      if (body.hospitalInfo?.name !== campaign.hospital_name) {
+        changes.push({ field: 'hospital_name', old_value: campaign.hospital_name, new_value: body.hospitalInfo?.name });
+        updateData.hospital_name = body.hospitalInfo?.name;
+      }
+      if (body.hospitalInfo?.address !== campaign.hospital_address) {
+        changes.push({ field: 'hospital_address', old_value: campaign.hospital_address, new_value: body.hospitalInfo?.address });
+        updateData.hospital_address = body.hospitalInfo?.address;
+      }
+      if (body.hospitalInfo?.contactNumber !== campaign.hospital_contact) {
+        changes.push({ field: 'hospital_contact', old_value: campaign.hospital_contact, new_value: body.hospitalInfo?.contactNumber });
+        updateData.hospital_contact = body.hospitalInfo?.contactNumber;
+      }
+      if (body.hospitalInfo?.email !== campaign.hospital_email) {
+        changes.push({ field: 'hospital_email', old_value: campaign.hospital_email, new_value: body.hospitalInfo?.email });
+        updateData.hospital_email = body.hospitalInfo?.email;
+      }
+      if (body.bloodType !== campaign.blood_type) {
+        changes.push({ field: 'blood_type', old_value: campaign.blood_type, new_value: body.bloodType });
+        updateData.blood_type = body.bloodType;
+      }
+      if (body.urgencyLevel !== campaign.urgency_level) {
+        changes.push({ field: 'urgency_level', old_value: campaign.urgency_level, new_value: body.urgencyLevel });
+        updateData.urgency_level = body.urgencyLevel || 'medium';
+      }
+      if (body.targetBloodUnits !== campaign.target_blood_units) {
+        changes.push({ field: 'target_blood_units', old_value: campaign.target_blood_units, new_value: body.targetBloodUnits });
+        updateData.target_blood_units = body.targetBloodUnits || 0;
+      }
     }
 
-    const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
-    const result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
-      filter,
-      { $set: updateData },
-      { returnDocument: 'after' }
-    );
-
-    // Update payment details if fundraising
-    if (body.type === 'fundraising' && body.paymentDetails) {
-      await db.collection<PaymentDetails>('payment_details').updateOne(
-        { campaign_id: campaign._id!.toString() },
-        {
-          $set: {
-            mobile_banking: body.paymentDetails.mobileBanking,
-            bank_account_number: body.paymentDetails.bankAccount?.accountNumber,
-            bank_name: body.paymentDetails.bankAccount?.bankName,
-            account_holder: body.paymentDetails.bankAccount?.accountHolder,
-          }
-        },
-        { upsert: true }
+    // Only update if there are changes
+    if (changes.length > 0) {
+      const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
+      const result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+        filter,
+        { $set: updateData },
+        { returnDocument: 'after' }
       );
-    }
 
-    return c.json({
-      id: result!._id!.toString(),
-      title: result!.title,
-      description: result!.description,
-      type: result!.type,
-      mainImage: result!.main_image_url,
-      additionalImages: result!.additional_images || [],
-      createdAt: result!.created_at.toISOString(),
-      updatedAt: result!.updated_at.toISOString(),
-      targetAmount: result!.target_amount,
-      currentAmount: result!.current_amount,
-      hospitalInfo: body.type === 'blood-donation' ? body.hospitalInfo : undefined,
-      bloodType: result!.blood_type,
-      urgencyLevel: result!.urgency_level,
-    });
+      // Save edit history
+      const editHistory: Partial<CampaignEditHistory> = {
+        campaign_id: campaign._id!.toString(),
+        edited_by: user.id,
+        changes,
+        edited_at: new Date(),
+      };
+      await db.collection('campaign_edit_history').insertOne(editHistory);
+
+      // Update payment details if fundraising
+      if (body.type === 'fundraising' && body.paymentDetails) {
+        await db.collection<PaymentDetails>('payment_details').updateOne(
+          { campaign_id: campaign._id!.toString() },
+          {
+            $set: {
+              mobile_banking: body.paymentDetails.mobileBanking,
+              bank_account_number: body.paymentDetails.bankAccount?.accountNumber,
+              bank_name: body.paymentDetails.bankAccount?.bankName,
+              account_holder: body.paymentDetails.bankAccount?.accountHolder,
+            }
+          },
+          { upsert: true }
+        );
+      }
+
+      return c.json({
+        id: result!._id!.toString(),
+        title: result!.title,
+        description: result!.description,
+        type: result!.type,
+        mainImage: result!.main_image_url,
+        additionalImages: result!.additional_images || [],
+        createdAt: result!.created_at.toISOString(),
+        updatedAt: result!.updated_at.toISOString(),
+        targetAmount: result!.target_amount,
+        currentAmount: result!.current_amount,
+        hospitalInfo: body.type === 'blood-donation' ? body.hospitalInfo : undefined,
+        bloodType: result!.blood_type,
+        urgencyLevel: result!.urgency_level,
+      });
+    } else {
+      // No changes, return current campaign
+      return c.json({
+        id: campaign._id!.toString(),
+        title: campaign.title,
+        description: campaign.description,
+        type: campaign.type,
+        mainImage: campaign.main_image_url,
+        additionalImages: campaign.additional_images || [],
+        createdAt: campaign.created_at.toISOString(),
+        updatedAt: campaign.updated_at.toISOString(),
+        targetAmount: campaign.target_amount,
+        currentAmount: campaign.current_amount,
+        hospitalInfo: body.type === 'blood-donation' ? body.hospitalInfo : undefined,
+        bloodType: campaign.blood_type,
+        urgencyLevel: campaign.urgency_level,
+      });
+    }
 
   } catch (error) {
     console.error('Error updating campaign:', error);
@@ -788,6 +1057,66 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
       error: { 
         code: 'INTERNAL_ERROR', 
         message: 'Failed to update campaign visibility' 
+      } 
+    }, 500);
+  }
+});
+
+// Get campaign edit history (public)
+app.get('/:id/edit-history', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const db = getDB();
+    
+    // Check if campaign exists
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
+    
+    if (!campaign) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
+    }
+
+    // Get edit history
+    const history = await db.collection<CampaignEditHistory>('campaign_edit_history')
+      .find({ campaign_id: campaign._id!.toString() })
+      .sort({ edited_at: -1 })
+      .toArray();
+
+    // Get user info for each edit
+    const userIds = [...new Set(history.map(h => h.edited_by))];
+    const users = await db.collection('users')
+      .find({ id: { $in: userIds } })
+      .toArray();
+    
+    const userMap = Object.fromEntries(
+      users.map(u => [u.id, { id: u.id, name: u.name, email: u.email }])
+    );
+
+    const formattedHistory = history.map(h => ({
+      id: h._id!.toString(),
+      campaignId: h.campaign_id,
+      editedBy: userMap[h.edited_by] || { id: h.edited_by, name: 'Unknown User', email: '' },
+      changes: h.changes,
+      editedAt: h.edited_at.toISOString(),
+    }));
+
+    return c.json(formattedHistory);
+
+  } catch (error) {
+    console.error('Error fetching edit history:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch edit history' 
       } 
     }, 500);
   }

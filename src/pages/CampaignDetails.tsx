@@ -9,6 +9,7 @@ import { ImageGallery } from '../components/ImageGallery';
 import { ShareSection } from '../components/ShareSection';
 import { CampaignUpdates } from '../components/CampaignUpdates';
 import { UpdateProgressModal } from '../components/UpdateProgressModal';
+import { CampaignEditHistory } from '../components/CampaignEditHistory';
 import { useAuth } from '../contexts/AuthContext';
 import { useViewTracking } from '../hooks/useViewTracking';
 import { copyToClipboard } from '../utils/clipboard';
@@ -24,6 +25,7 @@ export function CampaignDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showEditHistory, setShowEditHistory] = useState(false);
   
   // Track campaign view
   useViewTracking(id);
@@ -193,6 +195,16 @@ export function CampaignDetails() {
           campaignId={campaign.id} 
           isOwner={user?.id === (campaign as any).userId}
         />
+
+        <div className={styles.editHistorySection}>
+          <button
+            onClick={() => setShowEditHistory(!showEditHistory)}
+            className={styles.historyToggleButton}
+          >
+            {showEditHistory ? 'Hide Edit History' : 'View Edit History'}
+          </button>
+          {showEditHistory && <CampaignEditHistory campaignId={campaign.id} />}
+        </div>
       </div>
 
       {showUpdateModal && (
@@ -227,7 +239,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
       
       <div className={styles.paymentSection}>
         <h3>How to Contribute</h3>
-        {campaign.paymentDetails.mobileBanking && (
+        {campaign.paymentDetails?.mobileBanking && (
           <div className={styles.paymentMethod}>
             <h4>Mobile Banking</h4>
             <div className={styles.paymentDetail}>
@@ -243,7 +255,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
           </div>
         )}
         
-        {campaign.paymentDetails.bankAccount && (
+        {campaign.paymentDetails?.bankAccount && (
           <div className={styles.paymentMethod}>
             <h4>Bank Transfer</h4>
             <div className={styles.paymentDetail}>
@@ -279,7 +291,7 @@ function FundraisingInfo({ campaign }: { campaign: FundraisingCampaign }) {
           </div>
         )}
         
-        {!campaign.paymentDetails.mobileBanking && !campaign.paymentDetails.bankAccount && (
+        {!campaign.paymentDetails?.mobileBanking && !campaign.paymentDetails?.bankAccount && (
           <p className={styles.noPaymentInfo}>
             Payment information not provided by campaign creator.
           </p>
