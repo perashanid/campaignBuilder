@@ -15,6 +15,11 @@ export function ProgressTracker({ campaign, onUpdate }: ProgressTrackerProps) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // Update local state when campaign prop changes
+  useEffect(() => {
+    setCurrentCampaign(campaign);
+  }, [campaign]);
+
   useEffect(() => {
     if (currentCampaign.currentAmount >= currentCampaign.targetAmount) {
       return;
@@ -33,7 +38,7 @@ export function ProgressTracker({ campaign, onUpdate }: ProgressTrackerProps) {
         };
         
         // Update campaign progress via API (fire and forget for demo)
-        apiService.updateCampaignProgress(currentCampaign.id, newAmount).catch(console.error);
+        apiService.updateCampaignProgress(currentCampaign.id, { currentAmount: newAmount }).catch(console.error);
         
         setCurrentCampaign(updatedCampaign);
         onUpdate?.(updatedCampaign);
