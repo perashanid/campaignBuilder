@@ -1,5 +1,8 @@
 /* Import theme variables */
 @import './themes.css';
+@import './responsive.css';
+@import './mobile-utilities.css';
+@import './mobile-fixes.css';
 
 /* Reset and base styles */
 * {
