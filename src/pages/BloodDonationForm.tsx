@@ -178,6 +178,25 @@ export function BloodDonationForm({
               </select>
             </div>
           </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="targetBloodUnits">
+              Target Blood Units (Optional)
+            </label>
+            <input
+              id="targetBloodUnits"
+              type="number"
+              min="0"
+              step="1"
+              className={styles.input}
+              value={formData.targetBloodUnits || ''}
+              onChange={(e) => updateField('targetBloodUnits', parseInt(e.target.value) || 0)}
+              placeholder="e.g., 10"
+            />
+            <p className={styles.hint}>
+              Specify how many units of blood are needed (optional)
+            </p>
+          </div>
         </div>
 
         <div className={styles.section}>

@@ -101,10 +101,10 @@ class ApiService {
     return this.request('/campaigns');
   }
 
-  async updateCampaignProgress(id: string, amount: number): Promise<Campaign> {
+  async updateCampaignProgress(id: string, data: { currentAmount?: number; currentBloodUnits?: number }): Promise<Campaign> {
     return this.request(`/campaigns/${id}/progress`, {
       method: 'PATCH',
-      body: JSON.stringify({ currentAmount: amount }),
+      body: JSON.stringify(data),
     });
   }
 

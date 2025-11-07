@@ -39,6 +39,8 @@ export interface BloodDonationCampaign extends BaseCampaign {
   hospitalInfo: HospitalInfo;
   bloodType?: string;
   urgencyLevel: 'low' | 'medium' | 'high';
+  targetBloodUnits?: number;
+  currentBloodUnits?: number;
 }
 
 export type Campaign = FundraisingCampaign | BloodDonationCampaign;
@@ -78,4 +80,5 @@ export interface CampaignFormData {
   hospitalInfo?: HospitalInfo;
   bloodType?: string;
   urgencyLevel?: 'low' | 'medium' | 'high';
+  targetBloodUnits?: number;
 }
