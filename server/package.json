@@ -11,6 +11,8 @@
     "db:migrate:prod": "node dist/db/migrate.js",
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:prod": "node dist/db/seed.js",
+    "db:reset": "tsx src/db/reset.ts",
+    "db:verify": "tsx src/db/verify-seed.ts",
     "test": "bun test-runner.ts",
     "test:watch": "bun test --watch",
     "test:db": "bun test-runner.ts database",
