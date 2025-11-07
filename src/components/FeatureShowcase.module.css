@@ -1,0 +1,217 @@
+.showcase {
+  padding: 6rem 4rem;
+  width: 100%;
+  background: linear-gradient(135deg, #E5DDD4 0%, #DDD5CC 100%);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(162, 170, 219, 0.15);
+  border-bottom: 1px solid rgba(162, 170, 219, 0.15);
+}
+
+[data-theme="dark"] .showcase {
+  background: linear-gradient(135deg, rgba(40, 40, 50, 0.26) 0%, rgba(38, 38, 48, 0.24) 100%);
+  border-top: 1px solid rgba(162, 170, 219, 0.15);
+  border-bottom: 1px solid rgba(162, 170, 219, 0.15);
+}
+
+.showcaseInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-2xl);
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.imageSection {
+  position: relative;
+}
+
+.mockup {
+  position: relative;
+  padding: var(--spacing-xl);
+}
+
+.mockupScreen {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 60px rgba(255, 180, 120, 0.25);
+  overflow: hidden;
+  border: 2px solid rgba(255, 200, 150, 0.3);
+  transform: perspective(1000px) rotateY(-5deg);
+  transition: transform 0.3s ease;
+}
+
+[data-theme="dark"] .mockupScreen {
+  background: rgba(45, 45, 58, 0.9);
+  border: 2px solid rgba(162, 170, 219, 0.25);
+}
+
+.mockupScreen:hover {
+  transform: perspective(1000px) rotateY(0deg);
+}
+
+.mockupHeader {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: rgba(255, 240, 230, 0.6);
+  border-bottom: 1px solid rgba(162, 170, 219, 0.15);
+}
+
+[data-theme="dark"] .mockupHeader {
+  background: rgba(38, 38, 48, 0.4);
+  border-bottom: 1px solid rgba(162, 170, 219, 0.2);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff5f56, #ff9500);
+}
+
+.dot:nth-child(2) {
+  background: linear-gradient(135deg, #ffbd2e, #ffd700);
+}
+
+.dot:nth-child(3) {
+  background: linear-gradient(135deg, #27c93f, #00d084);
+}
+
+.mockupContent {
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.mockupCard {
+  height: 80px;
+  background: linear-gradient(135deg, 
+    rgba(162, 170, 219, 0.12), 
+    rgba(192, 201, 238, 0.12));
+  border-radius: var(--radius-lg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.mockupCard:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.mockupCard:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.contentSection {
+  padding: var(--spacing-xl);
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.3;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.7;
+}
+
+.featureList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1rem;
+  color: var(--color-text);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.featureItem:hover {
+  background: rgba(162, 170, 219, 0.08);
+  transform: translateX(5px);
+}
+
+.checkIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #A2AADB, #898AC4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(162, 170, 219, 0.35);
+  transition: transform 0.2s ease;
+}
+
+.featureItem:hover .checkIcon {
+  transform: scale(1.1);
+}
+
+@media (max-width: 1024px) {
+  .showcase {
+    padding: 4rem var(--spacing-lg);
+  }
+
+  .showcaseInner {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+  }
+
+  .featureList {
+    grid-template-columns: 1fr;
+  }
+  
+  .mockupScreen {
+    transform: perspective(1000px) rotateY(0deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .showcase {
+    padding: 3rem var(--spacing-md);
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .description {
+    font-size: 1rem;
+  }
+
+  .mockupContent {
+    padding: var(--spacing-md);
+  }
+
+  .mockupCard {
+    height: 60px;
+  }
+  
+  .contentSection {
+    padding: var(--spacing-md);
+  }
+}
