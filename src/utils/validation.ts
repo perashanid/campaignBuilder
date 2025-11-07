@@ -103,11 +103,12 @@ export const campaignValidationRules: ValidationRules = {
   },
   mainImage: {
     required: false, // Made optional for testing
-    pattern: /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i,
     custom: (value: any) => {
+      if (!value) return null; // Allow empty if not required
       if (typeof value === 'string' && value && !value.startsWith('http')) {
         return 'Image URL must start with http:// or https://';
       }
+      // No further validation - accept any valid URL
       return null;
     },
   },
@@ -165,10 +166,20 @@ export const campaignValidationRules: ValidationRules = {
 
 /**
  * Validate image URL
+ * Simply checks if it's a valid URL format - no restrictions on domain or file type
  */
 export function validateImageUrl(url: string): boolean {
-  const imageUrlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i;
-  return imageUrlPattern.test(url);
+  // Check if it's a valid URL format
+  if (!url || typeof url !== 'string') return false;
+  
+  // Must start with http:// or https://
+  if (!url.match(/^https?:\/\//i)) return false;
+  
+  // Must have a domain
+  if (!url.match(/^https?:\/\/[a-zA-Z0-9.-]+/i)) return false;
+  
+  // Accept any URL that starts with http/https and has a valid domain
+  return true;
 }
 
 /**

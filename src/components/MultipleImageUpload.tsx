@@ -58,18 +58,11 @@ export function MultipleImageUpload({
       return;
     }
 
-    setIsValidating(true);
     setImageError('');
     
-    const result = await testImageLoad(newImageUrl);
-    setIsValidating(false);
-    
-    if (result.success) {
-      onChange([...values, newImageUrl]);
-      setNewImageUrl('');
-    } else {
-      setImageError(result.error || 'Failed to load image. Please check the URL and try again.');
-    }
+    // Skip image loading test - just add the URL
+    onChange([...values, newImageUrl]);
+    setNewImageUrl('');
   };
 
   const handleRemoveImage = (index: number) => {
@@ -151,7 +144,7 @@ export function MultipleImageUpload({
       )}
       
       <div className={styles.hint}>
-        Add up to {maxImages} additional images. Supported formats: JPG, JPEG, PNG, WebP.
+        Add up to {maxImages} additional images. Enter any image URL.
       </div>
     </div>
   );

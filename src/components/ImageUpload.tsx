@@ -27,21 +27,8 @@ export function ImageUpload({
   const handleUrlChange = (url: string) => {
     onChange(url);
     setPreviewError(false);
-    
-    if (url && validateImageUrl(url)) {
-      setIsValidating(true);
-      // Test if image loads
-      const img = new Image();
-      img.onload = () => {
-        setIsValidating(false);
-        setPreviewError(false);
-      };
-      img.onerror = () => {
-        setIsValidating(false);
-        setPreviewError(true);
-      };
-      img.src = url;
-    }
+    setIsValidating(false);
+    // Don't pre-validate image loading - let the browser handle it
   };
 
   const handleImageError = () => {
@@ -101,7 +88,7 @@ export function ImageUpload({
       )}
       
       <div className={styles.hint}>
-        Supported formats: JPG, JPEG, PNG, WebP. Image must be hosted online.
+        Enter any image URL. If preview doesn't load, the image will still be saved.
       </div>
     </div>
   );
