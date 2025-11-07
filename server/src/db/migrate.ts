@@ -51,10 +51,10 @@ async function migrate() {
               title: { bsonType: 'string' },
               description: { bsonType: 'string' },
               type: { enum: ['fundraising', 'blood-donation'] },
-              view_count: { bsonType: 'int' },
+              view_count: { bsonType: ['int', 'double'] },
               is_hidden: { bsonType: 'bool' },
-              target_amount: { bsonType: ['double', 'null'] },
-              current_amount: { bsonType: ['double', 'null'] },
+              target_amount: { bsonType: ['int', 'double', 'null'] },
+              current_amount: { bsonType: ['int', 'double', 'null'] },
               urgency_level: { enum: ['low', 'medium', 'high', null] }
             }
           }
@@ -65,6 +65,33 @@ async function migrate() {
       await db.collection('campaigns').createIndex({ created_at: -1 });
       await db.collection('campaigns').createIndex({ view_count: -1 });
       console.log('✅ Created campaigns collection');
+    } else {
+      // Update validator for existing collection
+      try {
+        await db.command({
+          collMod: 'campaigns',
+          validator: {
+            $jsonSchema: {
+              bsonType: 'object',
+              required: ['user_id', 'title', 'description', 'type'],
+              properties: {
+                user_id: { bsonType: 'string' },
+                title: { bsonType: 'string' },
+                description: { bsonType: 'string' },
+                type: { enum: ['fundraising', 'blood-donation'] },
+                view_count: { bsonType: ['int', 'double'] },
+                is_hidden: { bsonType: 'bool' },
+                target_amount: { bsonType: ['int', 'double', 'null'] },
+                current_amount: { bsonType: ['int', 'double', 'null'] },
+                urgency_level: { enum: ['low', 'medium', 'high', null] }
+              }
+            }
+          }
+        });
+        console.log('✅ Updated campaigns collection validator');
+      } catch (error) {
+        console.log('⚠️ Could not update validator (collection may have existing data)');
+      }
     }
     
     // Payment details collection
