@@ -148,3 +148,34 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .modalOverlay {
+    padding: 0.5rem;
+  }
+  
+  .modal {
+    max-width: 100%;
+  }
+  
+  .header {
+    padding: 1rem;
+  }
+  
+  .header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .form {
+    padding: 1rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+  }
+}
