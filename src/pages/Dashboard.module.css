@@ -42,14 +42,63 @@
   background: var(--primary-color-hover);
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+.statsSection {
   margin-bottom: 3rem;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.statsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.statsHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.statsFilterButtons {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--color-surface);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.statsFilterButtons button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.statsFilterButtons button:hover {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.statsFilterButtons button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
 .statCard {
@@ -84,7 +133,8 @@
   align-items: center;
   gap: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  grid-column: span 2;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .analyticsCard:hover {
@@ -95,7 +145,7 @@
 .analyticsIcon {
   font-size: 2.5rem;
   flex-shrink: 0;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .analyticsContent {
@@ -105,12 +155,12 @@
 .analyticsContent h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .analyticsContent p {
-  color: #2d2d2d;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -282,6 +332,15 @@
 
   .welcome h1 {
     font-size: 1.75rem;
+  }
+
+  .statsHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .statsFilterButtons {
+    justify-content: center;
   }
 
   .stats {

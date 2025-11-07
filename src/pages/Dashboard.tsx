@@ -14,6 +14,7 @@ export function Dashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'fundraising' | 'blood-donation'>('all');
+  const [statsFilter, setStatsFilter] = useState<'all' | 'fundraising' | 'blood-donation'>('all');
 
   useEffect(() => {
     loadUserCampaigns();
@@ -69,13 +70,21 @@ export function Dashboard() {
     return campaign.type === filter;
   });
 
+  // Filter campaigns for stats based on statsFilter
+  const statsFilteredCampaigns = campaigns.filter(c => 
+    statsFilter === 'all' || c.type === statsFilter
+  );
+
   const stats = {
-    total: campaigns.length,
-    fundraising: campaigns.filter(c => c.type === 'fundraising').length,
-    bloodDonation: campaigns.filter(c => c.type === 'blood-donation').length,
-    totalRaised: campaigns
+    total: statsFilteredCampaigns.length,
+    fundraising: statsFilteredCampaigns.filter(c => c.type === 'fundraising').length,
+    bloodDonation: statsFilteredCampaigns.filter(c => c.type === 'blood-donation').length,
+    totalRaised: statsFilteredCampaigns
       .filter(c => c.type === 'fundraising')
       .reduce((sum, c) => sum + (c as any).currentAmount, 0),
+    totalBloodUnits: statsFilteredCampaigns
+      .filter(c => c.type === 'blood-donation')
+      .reduce((sum, c) => sum + ((c as any).currentBloodUnits || 0), 0),
   };
 
   if (isLoading) {
@@ -98,23 +107,62 @@ export function Dashboard() {
         </Link>
       </div>
 
-      <div className={styles.stats}>
-        <div className={styles.statCard}>
-          <h3>{stats.total}</h3>
-          <p>Total Campaigns</p>
+      <div className={styles.statsSection}>
+        <div className={styles.statsHeader}>
+          <h2>Your Statistics</h2>
+          <div className={styles.statsFilterButtons}>
+            <button 
+              className={statsFilter === 'all' ? styles.active : ''}
+              onClick={() => setStatsFilter('all')}
+            >
+              All
+            </button>
+            <button 
+              className={statsFilter === 'fundraising' ? styles.active : ''}
+              onClick={() => setStatsFilter('fundraising')}
+            >
+              Fundraising
+            </button>
+            <button 
+              className={statsFilter === 'blood-donation' ? styles.active : ''}
+              onClick={() => setStatsFilter('blood-donation')}
+            >
+              Blood Donation
+            </button>
+          </div>
         </div>
-        <div className={styles.statCard}>
-          <h3>{stats.fundraising}</h3>
-          <p>Fundraising</p>
+
+        <div className={styles.stats}>
+          <div className={styles.statCard}>
+            <h3>{stats.total}</h3>
+            <p>Total Campaigns</p>
+          </div>
+          {(statsFilter === 'all' || statsFilter === 'fundraising') && (
+            <>
+              <div className={styles.statCard}>
+                <h3>{stats.fundraising}</h3>
+                <p>Fundraising</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>${stats.totalRaised.toLocaleString()}</h3>
+                <p>Total Raised</p>
+              </div>
+            </>
+          )}
+          {(statsFilter === 'all' || statsFilter === 'blood-donation') && (
+            <>
+              <div className={styles.statCard}>
+                <h3>{stats.bloodDonation}</h3>
+                <p>Blood Donation</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>{stats.totalBloodUnits}</h3>
+                <p>Blood Units Collected</p>
+              </div>
+            </>
+          )}
         </div>
-        <div className={styles.statCard}>
-          <h3>{stats.bloodDonation}</h3>
-          <p>Blood Donation</p>
-        </div>
-        <div className={styles.statCard}>
-          <h3>${stats.totalRaised.toLocaleString()}</h3>
-          <p>Total Raised</p>
-        </div>
+
         <Link to="/analytics" className={styles.analyticsCard}>
           <div className={styles.analyticsIcon}>
             <FaChartBar />
