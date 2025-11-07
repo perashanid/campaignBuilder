@@ -5,21 +5,21 @@
   --color-primary: #A2AADB;
   --color-primary-hover: #898AC4;
   --color-secondary: #C0C9EE;
-  --color-background: #F5F6FB;
-  --color-background-rgb: 245, 246, 251;
-  --color-surface: #ffffff;
+  --color-background: #F9F8FD;
+  --color-background-rgb: 249, 248, 253;
+  --color-surface: #FFFBF5;
   --color-text: #2d2d3a;
   --color-text-secondary: #6b6b7e;
-  --color-border: #E5E7F0;
+  --color-border: #E5E3F0;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   
   /* Page-specific backgrounds - Light mode */
-  --page-bg-cream: #FFF8F0;
-  --page-bg-light-blue: #F0F2FA;
-  --page-bg-medium-blue: #F5F6FB;
-  --page-bg-dark-blue: #EDEEF7;
+  --page-bg-cream: #F9F8FD;
+  --page-bg-light-blue: #F5F4FB;
+  --page-bg-medium-blue: #F2F1F9;
+  --page-bg-dark-blue: #EFEEF7;
   
   /* Legacy variable names for compatibility */
   --primary-color: #A2AADB;
@@ -27,14 +27,14 @@
   --primary-color-alpha: rgba(162, 170, 219, 0.1);
   --text-primary: #2d2d3a;
   --text-secondary: #6b6b7e;
-  --background-primary: #F5F6FB;
-  --background-secondary: #ffffff;
-  --border-color: #E5E7F0;
+  --background-primary: #F9F8FD;
+  --background-secondary: #FFFBF5;
+  --border-color: #E5E3F0;
   --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   
   /* Card backgrounds */
-  --card-bg: #ffffff;
-  --card-bg-secondary: #FAFBFD;
+  --card-bg: #FFFBF5;
+  --card-bg-secondary: #FFF9F0;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
