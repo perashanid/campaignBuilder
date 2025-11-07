@@ -27,7 +27,14 @@
   margin-bottom: 2rem;
 }
 
-.timeRangeSelector {
+.filtersContainer {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.timeRangeSelector,
+.campaignTypeSelector {
   display: flex;
   gap: 0.5rem;
   background: var(--card-bg);
@@ -36,7 +43,8 @@
   width: fit-content;
 }
 
-.timeRangeSelector button {
+.timeRangeSelector button,
+.campaignTypeSelector button {
   padding: 0.75rem 1.5rem;
   border: none;
   background: transparent;
@@ -47,12 +55,14 @@
   transition: all 0.3s ease;
 }
 
-.timeRangeSelector button:hover {
+.timeRangeSelector button:hover,
+.campaignTypeSelector button:hover {
   background: var(--hover-bg);
   color: var(--text-primary);
 }
 
-.timeRangeSelector button.active {
+.timeRangeSelector button.active,
+.campaignTypeSelector button.active {
   background: var(--primary-color);
   color: white;
 }
@@ -234,17 +244,18 @@
 }
 
 .progressBar {
-  height: 8px;
-  background: var(--border-color);
-  border-radius: 4px;
+  height: 10px;
+  background: rgba(162, 170, 219, 0.2);
+  border-radius: 5px;
   overflow: hidden;
   margin-bottom: 0.5rem;
+  border: 1px solid var(--border-color);
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-  border-radius: 4px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 5px;
   transition: width 0.5s ease;
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiTrendingUp, FiEye, FiDollarSign, FiActivity, FiBarChart2, FiPieChart } from 'react-icons/fi';
+import { FiTrendingUp, FiEye, FiDollarSign, FiActivity, FiBarChart2, FiPieChart, FiEdit2, FiDroplet } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import styles from './AnalyticsPage.module.css';
@@ -14,6 +14,8 @@ interface CampaignAnalytics {
   createdAt: string;
   targetAmount?: number;
   currentAmount?: number;
+  targetBloodUnits?: number;
+  currentBloodUnits?: number;
   progress?: number;
   dailyViews?: { date: string; views: number }[];
   conversionRate?: number;
@@ -33,6 +35,7 @@ export function AnalyticsPage() {
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<'all' | 'fundraising' | 'blood-donation'>('all');
 
   useEffect(() => {
     loadAnalytics();
@@ -52,9 +55,11 @@ export function AnalyticsPage() {
         createdAt: campaign.createdAt,
         targetAmount: campaign.targetAmount,
         currentAmount: campaign.currentAmount,
-        progress: campaign.targetAmount 
-          ? Math.round((campaign.currentAmount / campaign.targetAmount) * 100)
-          : 0,
+        targetBloodUnits: campaign.targetBloodUnits,
+        currentBloodUnits: campaign.currentBloodUnits,
+        progress: campaign.type === 'fundraising'
+          ? (campaign.targetAmount ? Math.round((campaign.currentAmount / campaign.targetAmount) * 100) : 0)
+          : (campaign.targetBloodUnits ? Math.round((campaign.currentBloodUnits / campaign.targetBloodUnits) * 100) : 0),
         conversionRate: campaign.viewCount > 0 
           ? Math.round((campaign.currentAmount || 0) / campaign.viewCount * 100)
           : 0
@@ -92,11 +97,17 @@ export function AnalyticsPage() {
     }
   };
 
-  const totalViews = campaigns.reduce((sum, c) => sum + c.viewCount, 0);
-  const totalContributors = campaigns.reduce((sum, c) => sum + c.contributorCount, 0);
-  const totalRaised = campaigns.reduce((sum, c) => sum + (c.currentAmount || 0), 0);
-  const avgProgress = campaigns.length > 0
-    ? Math.round(campaigns.reduce((sum, c) => sum + (c.progress || 0), 0) / campaigns.length)
+  // Filter campaigns based on type
+  const filteredCampaigns = campaigns.filter(c => 
+    campaignTypeFilter === 'all' || c.type === campaignTypeFilter
+  );
+
+  const totalViews = filteredCampaigns.reduce((sum, c) => sum + c.viewCount, 0);
+  const totalContributors = filteredCampaigns.reduce((sum, c) => sum + c.contributorCount, 0);
+  const totalRaised = filteredCampaigns.reduce((sum, c) => sum + (c.currentAmount || 0), 0);
+  const totalBloodUnits = filteredCampaigns.reduce((sum, c) => sum + (c.currentBloodUnits || 0), 0);
+  const avgProgress = filteredCampaigns.length > 0
+    ? Math.round(filteredCampaigns.reduce((sum, c) => sum + (c.progress || 0), 0) / filteredCampaigns.length)
     : 0;
 
   return (
@@ -105,25 +116,48 @@ export function AnalyticsPage() {
         <h1 className={styles.title}>Campaign Analytics</h1>
         <p className={styles.subtitle}>Get detailed insights and reports to optimize your campaign performance</p>
         
-        <div className={styles.timeRangeSelector}>
-          <button 
-            className={timeRange === '7d' ? styles.active : ''}
-            onClick={() => setTimeRange('7d')}
-          >
-            Last 7 Days
-          </button>
-          <button 
-            className={timeRange === '30d' ? styles.active : ''}
-            onClick={() => setTimeRange('30d')}
-          >
-            Last 30 Days
-          </button>
-          <button 
-            className={timeRange === 'all' ? styles.active : ''}
-            onClick={() => setTimeRange('all')}
-          >
-            All Time
-          </button>
+        <div className={styles.filtersContainer}>
+          <div className={styles.timeRangeSelector}>
+            <button 
+              className={timeRange === '7d' ? styles.active : ''}
+              onClick={() => setTimeRange('7d')}
+            >
+              Last 7 Days
+            </button>
+            <button 
+              className={timeRange === '30d' ? styles.active : ''}
+              onClick={() => setTimeRange('30d')}
+            >
+              Last 30 Days
+            </button>
+            <button 
+              className={timeRange === 'all' ? styles.active : ''}
+              onClick={() => setTimeRange('all')}
+            >
+              All Time
+            </button>
+          </div>
+
+          <div className={styles.campaignTypeSelector}>
+            <button 
+              className={campaignTypeFilter === 'all' ? styles.active : ''}
+              onClick={() => setCampaignTypeFilter('all')}
+            >
+              All Campaigns
+            </button>
+            <button 
+              className={campaignTypeFilter === 'fundraising' ? styles.active : ''}
+              onClick={() => setCampaignTypeFilter('fundraising')}
+            >
+              Fundraising
+            </button>
+            <button 
+              className={campaignTypeFilter === 'blood-donation' ? styles.active : ''}
+              onClick={() => setCampaignTypeFilter('blood-donation')}
+            >
+              Blood Donation
+            </button>
+          </div>
         </div>
       </div>
 
@@ -142,7 +176,7 @@ export function AnalyticsPage() {
                 <FiBarChart2 />
               </div>
               <div className={styles.statContent}>
-                <div className={styles.statValue}>{campaigns.length}</div>
+                <div className={styles.statValue}>{filteredCampaigns.length}</div>
                 <div className={styles.statLabel}>Total Campaigns</div>
               </div>
             </motion.div>
@@ -177,20 +211,39 @@ export function AnalyticsPage() {
               </div>
             </motion.div>
 
-            <motion.div 
-              className={styles.statCard}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className={styles.statIcon}>
-                <FiDollarSign />
-              </div>
-              <div className={styles.statContent}>
-                <div className={styles.statValue}>${totalRaised.toLocaleString()}</div>
-                <div className={styles.statLabel}>Total Raised</div>
-              </div>
-            </motion.div>
+            {(campaignTypeFilter === 'all' || campaignTypeFilter === 'fundraising') && (
+              <motion.div 
+                className={styles.statCard}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className={styles.statIcon}>
+                  <FiDollarSign />
+                </div>
+                <div className={styles.statContent}>
+                  <div className={styles.statValue}>${totalRaised.toLocaleString()}</div>
+                  <div className={styles.statLabel}>Total Raised</div>
+                </div>
+              </motion.div>
+            )}
+
+            {(campaignTypeFilter === 'all' || campaignTypeFilter === 'blood-donation') && (
+              <motion.div 
+                className={styles.statCard}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className={styles.statIcon}>
+                  <FiDroplet />
+                </div>
+                <div className={styles.statContent}>
+                  <div className={styles.statValue}>{totalBloodUnits}</div>
+                  <div className={styles.statLabel}>Blood Units Collected</div>
+                </div>
+              </motion.div>
+            )}
 
             <motion.div 
               className={styles.statCard}
@@ -219,7 +272,7 @@ export function AnalyticsPage() {
                 <FiPieChart /> Campaign Performance
               </h3>
               <div className={styles.campaignsList}>
-                {campaigns.map((campaign) => (
+                {filteredCampaigns.map((campaign) => (
                   <div key={campaign.id} className={styles.campaignItem}>
                     <div className={styles.campaignHeader}>
                       <div className={styles.campaignInfo}>
@@ -247,7 +300,7 @@ export function AnalyticsPage() {
                           className={styles.editButton}
                           title="Edit campaign"
                         >
-                          <FiBarChart2 />
+                          <FiEdit2 />
                         </Link>
                       </div>
                     </div>
@@ -264,9 +317,22 @@ export function AnalyticsPage() {
                         </div>
                       </div>
                     )}
+                    {campaign.type === 'blood-donation' && (
+                      <div className={styles.campaignProgress}>
+                        <div className={styles.progressBar}>
+                          <div 
+                            className={styles.progressFill}
+                            style={{ width: `${Math.min(campaign.progress || 0, 100)}%` }}
+                          />
+                        </div>
+                        <div className={styles.progressText}>
+                          {campaign.currentBloodUnits || 0} / {campaign.targetBloodUnits || 0} units ({campaign.progress}%)
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {campaigns.length === 0 && (
+                {filteredCampaigns.length === 0 && (
                   <div className={styles.emptyState}>
                     <FiBarChart2 />
                     <p>No campaigns yet. Create your first campaign to see analytics!</p>
@@ -311,70 +377,7 @@ export function AnalyticsPage() {
             </motion.div>
           </div>
 
-          <motion.div 
-            className={styles.recommendationsCard}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <h3 className={styles.recommendationsTitle}>
-              <FiTrendingUp /> Optimization Recommendations
-            </h3>
-            <div className={styles.recommendations}>
-              {totalViews < 100 && (
-                <div className={styles.recommendation}>
-                  <div className={styles.recommendationIcon}>
-                    <FiActivity />
-                  </div>
-                  <div className={styles.recommendationContent}>
-                    <div className={styles.recommendationTitle}>Increase Visibility</div>
-                    <div className={styles.recommendationText}>
-                      Share your campaigns on social media to reach more people
-                    </div>
-                  </div>
-                </div>
-              )}
-              {avgProgress < 50 && campaigns.length > 0 && (
-                <div className={styles.recommendation}>
-                  <div className={styles.recommendationIcon}>
-                    <FiTrendingUp />
-                  </div>
-                  <div className={styles.recommendationContent}>
-                    <div className={styles.recommendationTitle}>Boost Engagement</div>
-                    <div className={styles.recommendationText}>
-                      Add more images and updates to your campaigns to increase donations
-                    </div>
-                  </div>
-                </div>
-              )}
-              {campaigns.length === 0 && (
-                <div className={styles.recommendation}>
-                  <div className={styles.recommendationIcon}>
-                    <FiActivity />
-                  </div>
-                  <div className={styles.recommendationContent}>
-                    <div className={styles.recommendationTitle}>Get Started</div>
-                    <div className={styles.recommendationText}>
-                      Create your first campaign to start making an impact
-                    </div>
-                  </div>
-                </div>
-              )}
-              {campaigns.length > 0 && avgProgress >= 50 && totalViews >= 100 && (
-                <div className={styles.recommendation}>
-                  <div className={styles.recommendationIcon}>
-                    <FiBarChart2 />
-                  </div>
-                  <div className={styles.recommendationContent}>
-                    <div className={styles.recommendationTitle}>Great Performance!</div>
-                    <div className={styles.recommendationText}>
-                      Your campaigns are performing well. Keep up the great work!
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
+
         </>
       )}
     </div>
