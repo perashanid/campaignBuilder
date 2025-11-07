@@ -1,30 +1,40 @@
 /* CSS Custom Properties for Theme System */
 
 :root {
-  /* Light theme colors */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-secondary: #64748b;
-  --color-background: #ffffff;
-  --color-background-rgb: 255, 255, 255;
-  --color-surface: #f8fafc;
-  --color-text: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-border: #e2e8f0;
+  /* Light theme colors - New Palette */
+  --color-primary: #A2AADB;
+  --color-primary-hover: #898AC4;
+  --color-secondary: #C0C9EE;
+  --color-background: #F5F6FB;
+  --color-background-rgb: 245, 246, 251;
+  --color-surface: #ffffff;
+  --color-text: #2d2d3a;
+  --color-text-secondary: #6b6b7e;
+  --color-border: #E5E7F0;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   
+  /* Page-specific backgrounds - Light mode */
+  --page-bg-cream: #FFF8F0;
+  --page-bg-light-blue: #F0F2FA;
+  --page-bg-medium-blue: #F5F6FB;
+  --page-bg-dark-blue: #EDEEF7;
+  
   /* Legacy variable names for compatibility */
-  --primary-color: #2563eb;
-  --primary-color-hover: #1d4ed8;
-  --primary-color-alpha: rgba(37, 99, 235, 0.1);
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --background-primary: #ffffff;
-  --background-secondary: #f8fafc;
-  --border-color: #e2e8f0;
+  --primary-color: #A2AADB;
+  --primary-color-hover: #898AC4;
+  --primary-color-alpha: rgba(162, 170, 219, 0.1);
+  --text-primary: #2d2d3a;
+  --text-secondary: #6b6b7e;
+  --background-primary: #F5F6FB;
+  --background-secondary: #ffffff;
+  --border-color: #E5E7F0;
   --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  
+  /* Card backgrounds */
+  --card-bg: #ffffff;
+  --card-bg-secondary: #FAFBFD;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -39,6 +49,8 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -53,57 +65,77 @@
 
 /* Dark theme colors */
 [data-theme="dark"] {
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-secondary: #94a3b8;
-  --color-background: #0f172a;
-  --color-background-rgb: 15, 23, 42;
-  --color-surface: #1e293b;
+  --color-primary: #A2AADB;
+  --color-primary-hover: #C0C9EE;
+  --color-secondary: #898AC4;
+  --color-background: #1a1a24;
+  --color-background-rgb: 26, 26, 36;
+  --color-surface: #2d2d3a;
   --color-text: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-border: #334155;
+  --color-text-secondary: #a8a8b8;
+  --color-border: #3d3d4a;
   --color-success: #22c55e;
   --color-warning: #fbbf24;
   --color-error: #f87171;
   
+  /* Page-specific backgrounds - Dark mode */
+  --page-bg-cream: #1a1a24;
+  --page-bg-light-blue: #252535;
+  --page-bg-medium-blue: #2d2d3a;
+  --page-bg-dark-blue: #1f1f2e;
+  
   /* Legacy variable names for compatibility */
-  --primary-color: #3b82f6;
-  --primary-color-hover: #2563eb;
-  --primary-color-alpha: rgba(59, 130, 246, 0.1);
+  --primary-color: #A2AADB;
+  --primary-color-hover: #C0C9EE;
+  --primary-color-alpha: rgba(162, 170, 219, 0.15);
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --background-primary: #0f172a;
-  --background-secondary: #1e293b;
-  --border-color: #334155;
-  --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --text-secondary: #a8a8b8;
+  --background-primary: #1a1a24;
+  --background-secondary: #2d2d3a;
+  --border-color: #3d3d4a;
+  --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  
+  /* Card backgrounds */
+  --card-bg: #2d2d3a;
+  --card-bg-secondary: #252535;
 }
 
 /* System theme preference detection */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --color-primary: #3b82f6;
-    --color-primary-hover: #2563eb;
-    --color-secondary: #94a3b8;
-    --color-background: #0f172a;
-    --color-background-rgb: 15, 23, 42;
-    --color-surface: #1e293b;
+    --color-primary: #A2AADB;
+    --color-primary-hover: #C0C9EE;
+    --color-secondary: #898AC4;
+    --color-background: #1a1a24;
+    --color-background-rgb: 26, 26, 36;
+    --color-surface: #2d2d3a;
     --color-text: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-border: #334155;
+    --color-text-secondary: #a8a8b8;
+    --color-border: #3d3d4a;
     --color-success: #22c55e;
     --color-warning: #fbbf24;
     --color-error: #f87171;
     
+    /* Page-specific backgrounds - Dark mode */
+    --page-bg-cream: #1a1a24;
+    --page-bg-light-blue: #252535;
+    --page-bg-medium-blue: #2d2d3a;
+    --page-bg-dark-blue: #1f1f2e;
+    
     /* Legacy variable names for compatibility */
-    --primary-color: #3b82f6;
-    --primary-color-hover: #2563eb;
-    --primary-color-alpha: rgba(59, 130, 246, 0.1);
+    --primary-color: #A2AADB;
+    --primary-color-hover: #C0C9EE;
+    --primary-color-alpha: rgba(162, 170, 219, 0.15);
     --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --background-primary: #0f172a;
-    --background-secondary: #1e293b;
-    --border-color: #334155;
-    --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+    --text-secondary: #a8a8b8;
+    --background-primary: #1a1a24;
+    --background-secondary: #2d2d3a;
+    --border-color: #3d3d4a;
+    --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    
+    /* Card backgrounds */
+    --card-bg: #2d2d3a;
+    --card-bg-secondary: #252535;
   }
 }
 

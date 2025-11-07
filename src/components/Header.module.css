@@ -72,7 +72,7 @@
 
 .navLink.active {
   color: var(--color-primary);
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.05));
+  background: linear-gradient(135deg, rgba(162, 170, 219, 0.15), rgba(162, 170, 219, 0.08));
 }
 
 .navLink.active::after {
@@ -151,11 +151,11 @@
   font-size: 0.875rem;
   font-weight: 600;
   transition: all var(--transition-normal);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(162, 170, 219, 0.35);
 }
 
 .registerButton:hover {
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 16px rgba(162, 170, 219, 0.45);
   transform: translateY(-2px);
 }
 

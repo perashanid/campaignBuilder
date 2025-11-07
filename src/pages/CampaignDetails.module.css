@@ -1,7 +1,7 @@
 .campaignDetails {
   min-height: 100vh;
   padding: 0;
-  background-color: var(--color-background);
+  background: var(--page-bg-medium-blue);
   position: relative;
 }
 
