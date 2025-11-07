@@ -1,7 +1,7 @@
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100vh;
   padding: 2rem 1rem;
+  background: var(--page-bg-light-blue);
 }
 
 .header {
@@ -10,6 +10,9 @@
   align-items: flex-start;
   margin-bottom: 2rem;
   gap: 1rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .welcome h1 {
@@ -44,6 +47,9 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 3rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .statCard {
@@ -68,11 +74,54 @@
   letter-spacing: 0.5px;
 }
 
+.analyticsCard {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  grid-column: span 2;
+}
+
+.analyticsCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.analyticsIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  color: #1a1a1a;
+}
+
+.analyticsContent {
+  flex: 1;
+}
+
+.analyticsContent h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+.analyticsContent p {
+  color: #2d2d2d;
+  font-size: 0.875rem;
+}
+
 .content {
   background: var(--background-primary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .filters {
