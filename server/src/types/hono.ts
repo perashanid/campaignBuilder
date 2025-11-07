@@ -1,8 +1,14 @@
 import { Context } from 'hono';
-import { User } from '../db/schema.js';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
 
 export type Variables = {
-  user: User;
+  user: AuthUser;
 };
 
 export type AuthContext = Context<{ Variables: Variables }>;
