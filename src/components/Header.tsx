@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiHome, FiGrid, FiLayout, FiPlusCircle } from 'react-icons/fi';
+import { FiHome, FiGrid, FiLayout, FiPlusCircle, FiBarChart2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
 import styles from './Header.module.css';
@@ -60,6 +60,12 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
                 <Link to="/dashboard" className={getNavLinkClass('/dashboard')}>
                   <FiLayout className={styles.navIcon} />
                   <span>Dashboard</span>
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/analytics" className={getNavLinkClass('/analytics')}>
+                  <FiBarChart2 className={styles.navIcon} />
+                  <span>Analytics</span>
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

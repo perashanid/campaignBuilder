@@ -16,6 +16,7 @@ import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
 import { EditCampaign } from './pages/EditCampaign'
+import { AnalyticsPage } from './pages/AnalyticsPage'
 import { NotFound } from './pages/NotFound'
 import styles from './App.module.css'
 
@@ -33,6 +34,11 @@ function AppContent() {
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <AnalyticsPage />
               </ProtectedRoute>
             } />
             <Route path="/create" element={
