@@ -65,6 +65,21 @@ export interface CampaignUpdateFormData {
   imageUrl?: string;
 }
 
+export interface CampaignEditHistory {
+  id: string;
+  campaignId: string;
+  editedBy: {
+    id: string;
+    name: string;
+  };
+  changes: {
+    field: string;
+    old_value: any;
+    new_value: any;
+  }[];
+  editedAt: string;
+}
+
 export interface CampaignFormData {
   title: string;
   description: string;

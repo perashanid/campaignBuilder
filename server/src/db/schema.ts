@@ -60,3 +60,26 @@ export interface Contribution {
   created_at: Date;
   is_anonymous: boolean;
 }
+
+export interface CampaignUpdate {
+  _id?: ObjectId;
+  campaign_id: string;
+  title: string;
+  description: string;
+  type: 'progress' | 'milestone' | 'general';
+  image_url?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CampaignEditHistory {
+  _id?: ObjectId;
+  campaign_id: string;
+  edited_by: string;
+  changes: {
+    field: string;
+    old_value: any;
+    new_value: any;
+  }[];
+  edited_at: Date;
+}
