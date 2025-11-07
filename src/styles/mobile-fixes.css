@@ -1,0 +1,238 @@
+/* Mobile Browser Fixes and Enhancements */
+
+/* Fix for mobile viewport height (accounts for browser chrome) */
+:root {
+  --vh: 1vh;
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific fixes */
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Fix for 100vh on mobile browsers */
+.full-height {
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* Prevent horizontal scroll */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix for iOS Safari bottom bar */
+@supports (-webkit-touch-callout: none) {
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Smooth scrolling on all devices */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for sticky elements on mobile */
+@media (max-width: 768px) {
+  .sticky-header {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+}
+
+/* Prevent zoom on double-tap (iOS) */
+* {
+  touch-action: manipulation;
+}
+
+/* Better focus styles for mobile */
+@media (max-width: 768px) {
+  button:focus,
+  a:focus,
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Fix for fixed positioning on mobile keyboards */
+@media (max-width: 768px) {
+  .fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  /* When keyboard is open, use absolute positioning */
+  @supports (-webkit-touch-callout: none) {
+    .fixed-bottom {
+      position: absolute;
+    }
+  }
+}
+
+/* Improve performance on mobile */
+@media (max-width: 768px) {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Hardware acceleration for animations */
+  .animated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* Fix for mobile Safari address bar */
+@supports (-webkit-touch-callout: none) {
+  .hero,
+  .full-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Better image loading on mobile */
+@media (max-width: 768px) {
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Fix for mobile menu overlays */
+@media (max-width: 768px) {
+  .mobile-menu-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+}
+
+/* Improve touch scrolling */
+.scrollable {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Fix for iOS input zoom */
+@media (max-width: 768px) {
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* Better modal behavior on mobile */
+@media (max-width: 768px) {
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-content {
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* Fix for landscape orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero {
+    min-height: 100vh;
+  }
+
+  /* Reduce padding in landscape */
+  .section {
+    padding-top: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+  }
+}
+
+/* Prevent text selection on buttons (mobile) */
+@media (max-width: 768px) {
+  button,
+  .button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Better video handling on mobile */
+@media (max-width: 768px) {
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Fix for mobile Safari flexbox bugs */
+@media (max-width: 768px) {
+  .flex-container {
+    min-height: 0;
+    min-width: 0;
+  }
+}
+
+/* Improve form usability on mobile */
+@media (max-width: 768px) {
+  form input,
+  form textarea,
+  form select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Larger checkboxes and radio buttons */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Fix for mobile Safari date/time inputs */
+@media (max-width: 768px) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    min-height: 44px;
+  }
+}
+
+/* Better dropdown behavior on mobile */
+@media (max-width: 768px) {
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+  }
+}

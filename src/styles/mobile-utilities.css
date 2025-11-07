@@ -1,0 +1,235 @@
+/* Mobile-Specific Utility Classes and Enhancements */
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+  /* Touch-friendly interactive elements */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text size adjustment on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Improve tap highlight */
+  * {
+    -webkit-tap-highlight-color: rgba(162, 170, 219, 0.2);
+  }
+
+  /* Better scrolling on iOS */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Stack form fields vertically */
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Full-width buttons on mobile */
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .button-group > * {
+    width: 100%;
+  }
+
+  /* Responsive tables */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  /* Card layouts stack on mobile */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  /* Reduce padding on mobile */
+  .section-padding {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  /* Hide decorative elements on mobile */
+  .decorative-only {
+    display: none;
+  }
+
+  /* Sticky headers on mobile */
+  .mobile-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-background);
+  }
+
+  /* Better modal sizing */
+  .modal-content {
+    max-width: 100%;
+    margin: var(--spacing-sm);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Responsive images */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Better spacing for mobile */
+  h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+
+  /* Improve readability */
+  p {
+    line-height: 1.6;
+  }
+
+  /* Better list spacing */
+  ul, ol {
+    padding-left: var(--spacing-lg);
+  }
+
+  li {
+    margin-bottom: var(--spacing-xs);
+  }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 0 var(--spacing-lg);
+  }
+
+  /* 2-column layouts on tablets */
+  .tablet-two-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical spacing in landscape */
+  .section-padding {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  /* Adjust hero sections */
+  .hero {
+    min-height: 60vh;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  /* Even smaller text on very small screens */
+  html {
+    font-size: 14px;
+  }
+
+  /* Tighter spacing */
+  .section-padding {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  /* Stack everything */
+  .flex-row {
+    flex-direction: column;
+  }
+
+  /* Full-width cards */
+  .card {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (max-width: 768px) {
+  /* Larger focus indicators */
+  *:focus {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Better contrast for links */
+  a {
+    text-decoration: underline;
+  }
+
+  a:hover,
+  a:focus {
+    text-decoration: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide navigation and interactive elements */
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Optimize for printing */
+  body {
+    background: white;
+    color: black;
+  }
+
+  /* Expand all content */
+  * {
+    overflow: visible !important;
+  }
+}
