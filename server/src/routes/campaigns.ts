@@ -92,6 +92,7 @@ app.get('/user', authenticateUser, async (c) => {
 app.post('/', authenticateUser, async (c) => {
   try {
     const body = await c.req.json();
+    console.log('📥 Received campaign data:', JSON.stringify(body, null, 2));
     
     if (!body.title || !body.description || !body.type) {
       return c.json({ 
@@ -123,28 +124,41 @@ app.post('/', authenticateUser, async (c) => {
     if (body.type === 'fundraising') {
       campaign.target_amount = body.targetAmount || 0;
       campaign.current_amount = 0;
+      console.log('💰 Fundraising campaign - target:', campaign.target_amount);
     } else {
-      campaign.hospital_name = body.hospitalInfo?.name;
-      campaign.hospital_address = body.hospitalInfo?.address;
-      campaign.hospital_contact = body.hospitalInfo?.contactNumber;
-      campaign.hospital_email = body.hospitalInfo?.email;
-      campaign.blood_type = body.bloodType;
+      campaign.hospital_name = body.hospitalInfo?.name || '';
+      campaign.hospital_address = body.hospitalInfo?.address || '';
+      campaign.hospital_contact = body.hospitalInfo?.contactNumber || '';
+      campaign.hospital_email = body.hospitalInfo?.email || '';
+      campaign.blood_type = body.bloodType || '';
       campaign.urgency_level = body.urgencyLevel || 'medium';
+      console.log('🏥 Blood donation campaign - hospital:', campaign.hospital_name);
     }
 
-    const result = await db.collection<Campaign>('campaigns').insertOne(campaign);
+    console.log('💾 Inserting campaign into database...');
+    console.log('📋 Campaign object:', JSON.stringify(campaign, null, 2));
+    const result = await db.collection('campaigns').insertOne(campaign);
+    console.log('✅ Campaign inserted with ID:', result.insertedId.toString());
 
     // Insert payment details if fundraising
     let paymentInfo = null;
     if (body.type === 'fundraising' && body.paymentDetails) {
-      await db.collection<PaymentDetails>('payment_details').insertOne({
-        campaign_id: result.insertedId.toString(),
-        mobile_banking: body.paymentDetails.mobileBanking,
-        bank_account_number: body.paymentDetails.bankAccount?.accountNumber,
-        bank_name: body.paymentDetails.bankAccount?.bankName,
-        account_holder: body.paymentDetails.bankAccount?.accountHolder,
+      console.log('💳 Inserting payment details:', {
+        mobileBanking: body.paymentDetails.mobileBanking,
+        hasBankAccount: !!body.paymentDetails.bankAccount
       });
       
+      const paymentDetails: Partial<PaymentDetails> = {
+        campaign_id: result.insertedId.toString(),
+        mobile_banking: body.paymentDetails.mobileBanking || '',
+        bank_account_number: body.paymentDetails.bankAccount?.accountNumber || '',
+        bank_name: body.paymentDetails.bankAccount?.bankName || '',
+        account_holder: body.paymentDetails.bankAccount?.accountHolder || '',
+      };
+      
+      await db.collection('payment_details').insertOne(paymentDetails as PaymentDetails);
+      
+      console.log('✅ Payment details inserted');
       paymentInfo = body.paymentDetails;
     }
 
@@ -161,8 +175,8 @@ app.post('/', authenticateUser, async (c) => {
         type: campaign.type,
         mainImage: campaign.main_image_url,
         additionalImages: campaign.additional_images,
-        createdAt: campaign.created_at.toISOString(),
-        updatedAt: campaign.updated_at.toISOString(),
+        createdAt: campaign.created_at?.toISOString() || now.toISOString(),
+        updatedAt: campaign.updated_at?.toISOString() || now.toISOString(),
         targetAmount: campaign.target_amount,
         currentAmount: campaign.current_amount,
         paymentDetails: paymentInfo,
@@ -173,11 +187,124 @@ app.post('/', authenticateUser, async (c) => {
     }, 201);
 
   } catch (error) {
-    console.error('Error creating campaign:', error);
+    console.error('❌ Error creating campaign:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return c.json({ 
       error: { 
         code: 'INTERNAL_ERROR', 
-        message: 'Failed to create campaign' 
+        message: 'Failed to create campaign',
+        details: error instanceof Error ? error.message : String(error)
+      } 
+    }, 500);
+  }
+});
+
+// Get most visited campaigns (must come before /:id route)
+app.get('/most-visited', async (c) => {
+  try {
+    const db = getDB();
+    
+    const campaigns = await db.collection<Campaign>('campaigns')
+      .find({ $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] })
+      .sort({ view_count: -1, created_at: -1 })
+      .limit(6)
+      .toArray();
+    
+    const formattedCampaigns = campaigns.map((campaign) => ({
+      id: campaign._id!.toString(),
+      title: campaign.title,
+      description: campaign.description,
+      type: campaign.type,
+      mainImage: campaign.main_image_url,
+      createdAt: campaign.created_at.toISOString(),
+      viewCount: campaign.view_count || 0,
+      targetAmount: campaign.target_amount,
+      currentAmount: campaign.current_amount,
+      hospitalInfo: campaign.type === 'blood-donation' ? {
+        name: campaign.hospital_name,
+        address: campaign.hospital_address,
+      } : undefined,
+      urgencyLevel: campaign.urgency_level,
+    }));
+
+    return c.json(formattedCampaigns);
+  } catch (error) {
+    console.error('Error fetching most visited campaigns:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch most visited campaigns' 
+      } 
+    }, 500);
+  }
+});
+
+// Get platform statistics (must come before /:id route)
+app.get('/stats/platform', async (c) => {
+  try {
+    const db = getDB();
+    
+    const totalCampaigns = await db.collection('campaigns').countDocuments();
+    const fundraisingCampaigns = await db.collection('campaigns').countDocuments({ type: 'fundraising' });
+    const bloodDonationCampaigns = await db.collection('campaigns').countDocuments({ type: 'blood-donation' });
+    const activeCampaigns = await db.collection('campaigns').countDocuments({ 
+      $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] 
+    });
+    
+    const viewsResult = await db.collection('campaigns').aggregate([
+      { $group: { _id: null, total: { $sum: '$view_count' } } }
+    ]).toArray();
+    const totalViews = viewsResult[0]?.total || 0;
+    
+    const fundsResult = await db.collection('campaigns').aggregate([
+      { $match: { type: 'fundraising' } },
+      { $group: { _id: null, total: { $sum: '$current_amount' } } }
+    ]).toArray();
+    const totalFundsRaised = fundsResult[0]?.total || 0;
+    
+    const completedCampaigns = await db.collection('campaigns').countDocuments({
+      type: 'fundraising',
+      $expr: { $gte: ['$current_amount', '$target_amount'] }
+    });
+    
+    const totalUsers = await db.collection('users').countDocuments();
+    
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const campaignsThisWeek = await db.collection('campaigns').countDocuments({ created_at: { $gte: sevenDaysAgo } });
+    const campaignsThisMonth = await db.collection('campaigns').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
+    const newUsersThisWeek = await db.collection('users').countDocuments({ created_at: { $gte: sevenDaysAgo } });
+    const newUsersThisMonth = await db.collection('users').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
+
+    return c.json({
+      campaigns: {
+        total: totalCampaigns,
+        fundraising: fundraisingCampaigns,
+        bloodDonation: bloodDonationCampaigns,
+        active: activeCampaigns,
+        completed: completedCampaigns,
+        thisWeek: campaignsThisWeek,
+        thisMonth: campaignsThisMonth,
+      },
+      users: {
+        total: totalUsers,
+        newThisWeek: newUsersThisWeek,
+        newThisMonth: newUsersThisMonth,
+      },
+      engagement: {
+        totalViews,
+        totalFundsRaised,
+        averageFundingProgress: 0,
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching platform statistics:', error);
+    return c.json({ 
+      error: { 
+        code: 'INTERNAL_ERROR', 
+        message: 'Failed to fetch platform statistics' 
       } 
     }, 500);
   }
@@ -342,46 +469,6 @@ app.post('/:id/view', async (c) => {
       error: { 
         code: 'INTERNAL_ERROR', 
         message: 'Failed to increment view count' 
-      } 
-    }, 500);
-  }
-});
-
-// Get most visited campaigns
-app.get('/most-visited', async (c) => {
-  try {
-    const db = getDB();
-    
-    const campaigns = await db.collection<Campaign>('campaigns')
-      .find({ $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] })
-      .sort({ view_count: -1, created_at: -1 })
-      .limit(6)
-      .toArray();
-    
-    const formattedCampaigns = campaigns.map((campaign) => ({
-      id: campaign._id!.toString(),
-      title: campaign.title,
-      description: campaign.description,
-      type: campaign.type,
-      mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at.toISOString(),
-      viewCount: campaign.view_count || 0,
-      targetAmount: campaign.target_amount,
-      currentAmount: campaign.current_amount,
-      hospitalInfo: campaign.type === 'blood-donation' ? {
-        name: campaign.hospital_name,
-        address: campaign.hospital_address,
-      } : undefined,
-      urgencyLevel: campaign.urgency_level,
-    }));
-
-    return c.json(formattedCampaigns);
-  } catch (error) {
-    console.error('Error fetching most visited campaigns:', error);
-    return c.json({ 
-      error: { 
-        code: 'INTERNAL_ERROR', 
-        message: 'Failed to fetch most visited campaigns' 
       } 
     }, 500);
   }
@@ -628,77 +715,6 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
       error: { 
         code: 'INTERNAL_ERROR', 
         message: 'Failed to update campaign visibility' 
-      } 
-    }, 500);
-  }
-});
-
-// Get platform statistics
-app.get('/stats/platform', async (c) => {
-  try {
-    const db = getDB();
-    
-    const totalCampaigns = await db.collection('campaigns').countDocuments();
-    const fundraisingCampaigns = await db.collection('campaigns').countDocuments({ type: 'fundraising' });
-    const bloodDonationCampaigns = await db.collection('campaigns').countDocuments({ type: 'blood-donation' });
-    const activeCampaigns = await db.collection('campaigns').countDocuments({ 
-      $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] 
-    });
-    
-    const viewsResult = await db.collection('campaigns').aggregate([
-      { $group: { _id: null, total: { $sum: '$view_count' } } }
-    ]).toArray();
-    const totalViews = viewsResult[0]?.total || 0;
-    
-    const fundsResult = await db.collection('campaigns').aggregate([
-      { $match: { type: 'fundraising' } },
-      { $group: { _id: null, total: { $sum: '$current_amount' } } }
-    ]).toArray();
-    const totalFundsRaised = fundsResult[0]?.total || 0;
-    
-    const completedCampaigns = await db.collection('campaigns').countDocuments({
-      type: 'fundraising',
-      $expr: { $gte: ['$current_amount', '$target_amount'] }
-    });
-    
-    const totalUsers = await db.collection('users').countDocuments();
-    
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
-    const campaignsThisWeek = await db.collection('campaigns').countDocuments({ created_at: { $gte: sevenDaysAgo } });
-    const campaignsThisMonth = await db.collection('campaigns').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
-    const newUsersThisWeek = await db.collection('users').countDocuments({ created_at: { $gte: sevenDaysAgo } });
-    const newUsersThisMonth = await db.collection('users').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
-
-    return c.json({
-      campaigns: {
-        total: totalCampaigns,
-        fundraising: fundraisingCampaigns,
-        bloodDonation: bloodDonationCampaigns,
-        active: activeCampaigns,
-        completed: completedCampaigns,
-        thisWeek: campaignsThisWeek,
-        thisMonth: campaignsThisMonth,
-      },
-      users: {
-        total: totalUsers,
-        newThisWeek: newUsersThisWeek,
-        newThisMonth: newUsersThisMonth,
-      },
-      engagement: {
-        totalViews,
-        totalFundsRaised,
-        averageFundingProgress: 0,
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching platform statistics:', error);
-    return c.json({ 
-      error: { 
-        code: 'INTERNAL_ERROR', 
-        message: 'Failed to fetch platform statistics' 
       } 
     }, 500);
   }
