@@ -65,34 +65,74 @@ export function AnalyticsPreview() {
               <span className={styles.chartPeriod}>Last 30 days</span>
             </div>
             <div className={styles.chartBars}>
-              <div className={styles.bar} style={{ height: '60%' }}>
+              <motion.div 
+                className={styles.bar} 
+                style={{ height: '60%' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
                 <div className={styles.barFill}></div>
                 <span>Week 1</span>
-              </div>
-              <div className={styles.bar} style={{ height: '75%' }}>
+              </motion.div>
+              <motion.div 
+                className={styles.bar} 
+                style={{ height: '75%' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
                 <div className={styles.barFill}></div>
                 <span>Week 2</span>
-              </div>
-              <div className={styles.bar} style={{ height: '90%' }}>
+              </motion.div>
+              <motion.div 
+                className={styles.bar} 
+                style={{ height: '90%' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
                 <div className={styles.barFill}></div>
                 <span>Week 3</span>
-              </div>
-              <div className={styles.bar} style={{ height: '100%' }}>
+              </motion.div>
+              <motion.div 
+                className={styles.bar} 
+                style={{ height: '100%' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
                 <div className={styles.barFill}></div>
                 <span>Week 4</span>
-              </div>
+              </motion.div>
             </div>
           </div>
           
           <div className={styles.statsGrid}>
-            <div className={styles.stat}>
+            <motion.div 
+              className={styles.stat}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+            >
               <div className={styles.statValue}>2.5K</div>
               <div className={styles.statLabel}>Total Views</div>
-            </div>
-            <div className={styles.stat}>
+            </motion.div>
+            <motion.div 
+              className={styles.stat}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.7, duration: 0.4 }}
+            >
               <div className={styles.statValue}>85%</div>
               <div className={styles.statLabel}>Avg Progress</div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>

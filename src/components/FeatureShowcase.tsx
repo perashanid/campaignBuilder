@@ -25,19 +25,12 @@ export function FeatureShowcase() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className={styles.mockup}>
-            <div className={styles.mockupScreen}>
-              <div className={styles.mockupHeader}>
-                <div className={styles.dot}></div>
-                <div className={styles.dot}></div>
-                <div className={styles.dot}></div>
-              </div>
-              <div className={styles.mockupContent}>
-                <div className={styles.mockupCard}></div>
-                <div className={styles.mockupCard}></div>
-                <div className={styles.mockupCard}></div>
-              </div>
-            </div>
+          <div className={styles.imageWrapper}>
+            <img 
+              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop" 
+              alt="Campaign dashboard and analytics"
+              className={styles.showcaseImage}
+            />
           </div>
         </motion.div>
 
