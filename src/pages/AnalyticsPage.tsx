@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiTrendingUp, FiEye, FiDollarSign, FiActivity, FiBarChart2, FiPieChart } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import styles from './AnalyticsPage.module.css';
 
@@ -9,6 +10,7 @@ interface CampaignAnalytics {
   title: string;
   type: string;
   viewCount: number;
+  contributorCount: number;
   createdAt: string;
   targetAmount?: number;
   currentAmount?: number;
@@ -39,16 +41,14 @@ export function AnalyticsPage() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const [userCampaigns, stats] = await Promise.all([
-        apiService.getUserCampaigns(),
-        apiService.getPlatformStats()
-      ]);
+      const userCampaigns = await apiService.getUserCampaigns();
 
       const analyticsData = userCampaigns.map((campaign: any) => ({
         id: campaign.id,
         title: campaign.title,
         type: campaign.type,
         viewCount: campaign.viewCount || 0,
+        contributorCount: campaign.contributorCount || 0,
         createdAt: campaign.createdAt,
         targetAmount: campaign.targetAmount,
         currentAmount: campaign.currentAmount,
@@ -61,13 +61,29 @@ export function AnalyticsPage() {
       }));
 
       setCampaigns(analyticsData);
+      
+      // Calculate stats from user's campaigns only
+      const activeCampaigns = analyticsData.filter((c: any) => 
+        c.type === 'fundraising' ? c.progress < 100 : true
+      ).length;
+      
+      const completedCampaigns = analyticsData.filter((c: any) => 
+        c.type === 'fundraising' && c.progress >= 100
+      ).length;
+      
+      const totalViews = analyticsData.reduce((sum: number, c: any) => sum + c.viewCount, 0);
+      const totalFundsRaised = analyticsData.reduce((sum: number, c: any) => sum + (c.currentAmount || 0), 0);
+      const avgProgress = analyticsData.length > 0
+        ? Math.round(analyticsData.reduce((sum: number, c: any) => sum + (c.progress || 0), 0) / analyticsData.length)
+        : 0;
+
       setPlatformStats({
-        totalCampaigns: stats.campaigns?.total || 0,
-        totalViews: stats.engagement?.totalViews || 0,
-        totalFundsRaised: stats.engagement?.totalFundsRaised || 0,
-        activeCampaigns: stats.campaigns?.active || 0,
-        completedCampaigns: stats.campaigns?.completed || 0,
-        averageProgress: stats.engagement?.averageFundingProgress || 0
+        totalCampaigns: analyticsData.length,
+        totalViews,
+        totalFundsRaised,
+        activeCampaigns,
+        completedCampaigns,
+        averageProgress: avgProgress
       });
     } catch (error) {
       console.error('Error loading analytics:', error);
@@ -77,6 +93,7 @@ export function AnalyticsPage() {
   };
 
   const totalViews = campaigns.reduce((sum, c) => sum + c.viewCount, 0);
+  const totalContributors = campaigns.reduce((sum, c) => sum + c.contributorCount, 0);
   const totalRaised = campaigns.reduce((sum, c) => sum + (c.currentAmount || 0), 0);
   const avgProgress = campaigns.length > 0
     ? Math.round(campaigns.reduce((sum, c) => sum + (c.progress || 0), 0) / campaigns.length)
@@ -152,6 +169,21 @@ export function AnalyticsPage() {
               transition={{ delay: 0.3 }}
             >
               <div className={styles.statIcon}>
+                <FiActivity />
+              </div>
+              <div className={styles.statContent}>
+                <div className={styles.statValue}>{totalContributors.toLocaleString()}</div>
+                <div className={styles.statLabel}>Total Contributors</div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className={styles.statCard}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className={styles.statIcon}>
                 <FiDollarSign />
               </div>
               <div className={styles.statContent}>
@@ -164,7 +196,7 @@ export function AnalyticsPage() {
               className={styles.statCard}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.5 }}
             >
               <div className={styles.statIcon}>
                 <FiTrendingUp />
@@ -189,13 +221,34 @@ export function AnalyticsPage() {
               <div className={styles.campaignsList}>
                 {campaigns.map((campaign) => (
                   <div key={campaign.id} className={styles.campaignItem}>
-                    <div className={styles.campaignInfo}>
-                      <div className={styles.campaignName}>{campaign.title}</div>
-                      <div className={styles.campaignMeta}>
-                        <span className={styles.campaignType}>{campaign.type}</span>
-                        <span className={styles.campaignViews}>
-                          <FiEye /> {campaign.viewCount} views
-                        </span>
+                    <div className={styles.campaignHeader}>
+                      <div className={styles.campaignInfo}>
+                        <div className={styles.campaignName}>{campaign.title}</div>
+                        <div className={styles.campaignMeta}>
+                          <span className={styles.campaignType}>{campaign.type}</span>
+                          <span className={styles.campaignViews}>
+                            <FiEye /> {campaign.viewCount} views
+                          </span>
+                          <span className={styles.campaignViews}>
+                            <FiActivity /> {campaign.contributorCount} contributors
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.campaignActions}>
+                        <Link 
+                          to={`/campaign/${campaign.id}`}
+                          className={styles.viewButton}
+                          title="View campaign"
+                        >
+                          <FiEye />
+                        </Link>
+                        <Link 
+                          to={`/campaign/${campaign.id}/edit`}
+                          className={styles.editButton}
+                          title="Edit campaign"
+                        >
+                          <FiBarChart2 />
+                        </Link>
                       </div>
                     </div>
                     {campaign.type === 'fundraising' && (
@@ -229,7 +282,7 @@ export function AnalyticsPage() {
               transition={{ delay: 0.6 }}
             >
               <h3 className={styles.chartTitle}>
-                <FiActivity /> Platform Insights
+                <FiActivity /> Your Campaign Insights
               </h3>
               {platformStats && (
                 <div className={styles.insightsList}>
@@ -242,11 +295,15 @@ export function AnalyticsPage() {
                     <div className={styles.insightValue}>{platformStats.completedCampaigns}</div>
                   </div>
                   <div className={styles.insightItem}>
-                    <div className={styles.insightLabel}>Platform Total Views</div>
+                    <div className={styles.insightLabel}>Total Views</div>
                     <div className={styles.insightValue}>{platformStats.totalViews.toLocaleString()}</div>
                   </div>
                   <div className={styles.insightItem}>
-                    <div className={styles.insightLabel}>Platform Total Raised</div>
+                    <div className={styles.insightLabel}>Total Contributors</div>
+                    <div className={styles.insightValue}>{totalContributors.toLocaleString()}</div>
+                  </div>
+                  <div className={styles.insightItem}>
+                    <div className={styles.insightLabel}>Total Raised</div>
                     <div className={styles.insightValue}>${platformStats.totalFundsRaised.toLocaleString()}</div>
                   </div>
                 </div>

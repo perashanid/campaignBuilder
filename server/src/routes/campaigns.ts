@@ -58,6 +58,19 @@ app.get('/user', authenticateUser, async (c) => {
       .sort({ created_at: -1 })
       .toArray();
     
+    // Get contributor counts for each campaign
+    const campaignIds = campaigns.map(c => c._id!.toString());
+    const contributorCounts = await Promise.all(
+      campaignIds.map(async (id) => {
+        const count = await db.collection('contributions').countDocuments({ campaign_id: id });
+        return { id, count };
+      })
+    );
+    
+    const contributorMap = Object.fromEntries(
+      contributorCounts.map(({ id, count }) => [id, count])
+    );
+    
     const formattedCampaigns = campaigns.map((campaign) => ({
       id: campaign._id?.toString(),
       title: campaign.title,
@@ -74,6 +87,7 @@ app.get('/user', authenticateUser, async (c) => {
       } : undefined,
       urgencyLevel: campaign.urgency_level,
       viewCount: campaign.view_count || 0,
+      contributorCount: contributorMap[campaign._id!.toString()] || 0,
     }));
 
     return c.json(formattedCampaigns);
@@ -132,6 +146,8 @@ app.post('/', authenticateUser, async (c) => {
       campaign.hospital_email = body.hospitalInfo?.email || '';
       campaign.blood_type = body.bloodType || '';
       campaign.urgency_level = body.urgencyLevel || 'medium';
+      campaign.target_blood_units = body.targetBloodUnits || 0;
+      campaign.current_blood_units = 0;
       console.log('🏥 Blood donation campaign - hospital:', campaign.hospital_name);
     }
 
@@ -183,6 +199,8 @@ app.post('/', authenticateUser, async (c) => {
         hospitalInfo: body.type === 'blood-donation' ? body.hospitalInfo : undefined,
         bloodType: campaign.blood_type,
         urgencyLevel: campaign.urgency_level,
+        targetBloodUnits: campaign.target_blood_units,
+        currentBloodUnits: campaign.current_blood_units,
       }
     }, 201);
 
@@ -352,6 +370,7 @@ app.get('/:id', async (c) => {
 
     const response: any = {
       id: campaign._id!.toString(),
+      userId: campaign.user_id,
       title: campaign.title,
       description: campaign.description,
       type: campaign.type,
@@ -359,6 +378,7 @@ app.get('/:id', async (c) => {
       additionalImages: campaign.additional_images || [],
       createdAt: campaign.created_at.toISOString(),
       updatedAt: campaign.updated_at.toISOString(),
+      isHidden: campaign.is_hidden || false,
     };
 
     if (campaign.type === 'fundraising') {
@@ -374,6 +394,8 @@ app.get('/:id', async (c) => {
       };
       response.bloodType = campaign.blood_type;
       response.urgencyLevel = campaign.urgency_level;
+      response.targetBloodUnits = campaign.target_blood_units || 0;
+      response.currentBloodUnits = campaign.current_blood_units || 0;
     }
 
     return c.json(response);
@@ -474,47 +496,89 @@ app.post('/:id/view', async (c) => {
   }
 });
 
-// Update campaign progress (for fundraising campaigns)
-app.patch('/:id/progress', async (c) => {
+// Update campaign progress (protected - owner only)
+app.patch('/:id/progress', authenticateUser, async (c) => {
   try {
     const id = c.req.param('id');
+    const user = c.get('user');
     const body = await c.req.json();
     const db = getDB();
     
-    if (!body.currentAmount || typeof body.currentAmount !== 'number') {
-      return c.json({ 
-        error: { 
-          code: 'VALIDATION_ERROR', 
-          message: 'Invalid currentAmount provided' 
-        } 
-      }, 400);
+    // First, check if campaign exists and belongs to user
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
     }
 
-    let result;
-    if (ObjectId.isValid(id)) {
-      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
-        { _id: new ObjectId(id), type: 'fundraising' },
-        { $set: { current_amount: body.currentAmount, updated_at: new Date() } },
-        { returnDocument: 'after' }
-      );
-    } else {
-      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
-        { id, type: 'fundraising' },
-        { $set: { current_amount: body.currentAmount, updated_at: new Date() } },
-        { returnDocument: 'after' }
-      );
+    if (!campaign) {
+      return c.json({ 
+        error: { 
+          code: 'NOT_FOUND', 
+          message: 'Campaign not found' 
+        } 
+      }, 404);
     }
+
+    if (campaign.user_id !== user.id) {
+      return c.json({ 
+        error: { 
+          code: 'FORBIDDEN', 
+          message: 'You can only update your own campaigns' 
+        } 
+      }, 403);
+    }
+
+    const updateData: any = { updated_at: new Date() };
+
+    // Handle fundraising campaign updates
+    if (campaign.type === 'fundraising') {
+      if (body.currentAmount !== undefined) {
+        if (typeof body.currentAmount !== 'number' || body.currentAmount < 0) {
+          return c.json({ 
+            error: { 
+              code: 'VALIDATION_ERROR', 
+              message: 'Invalid currentAmount provided' 
+            } 
+          }, 400);
+        }
+        updateData.current_amount = body.currentAmount;
+      }
+    }
+
+    // Handle blood donation campaign updates
+    if (campaign.type === 'blood-donation') {
+      if (body.currentBloodUnits !== undefined) {
+        if (typeof body.currentBloodUnits !== 'number' || body.currentBloodUnits < 0) {
+          return c.json({ 
+            error: { 
+              code: 'VALIDATION_ERROR', 
+              message: 'Invalid currentBloodUnits provided' 
+            } 
+          }, 400);
+        }
+        updateData.current_blood_units = body.currentBloodUnits;
+      }
+    }
+
+    const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
+    const result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+      filter,
+      { $set: updateData },
+      { returnDocument: 'after' }
+    );
 
     if (!result) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
-          message: 'Fundraising campaign not found' 
+          message: 'Campaign not found' 
         } 
       }, 404);
     }
 
-    return c.json({
+    const response: any = {
       id: result._id!.toString(),
       title: result.title,
       description: result.description,
@@ -523,9 +587,17 @@ app.patch('/:id/progress', async (c) => {
       additionalImages: result.additional_images || [],
       createdAt: result.created_at.toISOString(),
       updatedAt: result.updated_at.toISOString(),
-      targetAmount: result.target_amount || 0,
-      currentAmount: result.current_amount || 0,
-    });
+    };
+
+    if (result.type === 'fundraising') {
+      response.targetAmount = result.target_amount || 0;
+      response.currentAmount = result.current_amount || 0;
+    } else {
+      response.targetBloodUnits = result.target_blood_units || 0;
+      response.currentBloodUnits = result.current_blood_units || 0;
+    }
+
+    return c.json(response);
 
   } catch (error) {
     console.error('Error updating campaign progress:', error);
@@ -589,6 +661,7 @@ app.put('/:id', authenticateUser, async (c) => {
       updateData.hospital_email = body.hospitalInfo?.email;
       updateData.blood_type = body.bloodType;
       updateData.urgency_level = body.urgencyLevel || 'medium';
+      updateData.target_blood_units = body.targetBloodUnits || 0;
     }
 
     const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };

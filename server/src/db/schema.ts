@@ -21,6 +21,8 @@ export interface Campaign {
   is_hidden: boolean;
   target_amount?: number;
   current_amount?: number;
+  target_blood_units?: number;
+  current_blood_units?: number;
   hospital_name?: string;
   hospital_address?: string;
   hospital_contact?: string;
@@ -46,4 +48,15 @@ export interface Session {
   token: string;
   expires_at: Date;
   created_at: Date;
+}
+
+export interface Contribution {
+  _id?: ObjectId;
+  campaign_id: string;
+  contributor_name?: string;
+  contributor_email?: string;
+  amount?: number;
+  contribution_type: 'donation' | 'blood-pledge';
+  created_at: Date;
+  is_anonymous: boolean;
 }
