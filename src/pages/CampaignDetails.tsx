@@ -1,12 +1,14 @@
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { FaClipboard } from 'react-icons/fa';
+import { FaClipboard, FaEdit, FaTrash, FaEye, FaEyeSlash, FaChartLine } from 'react-icons/fa';
 import { apiService } from '../services/api';
 import { FundraisingCampaign, BloodDonationCampaign } from '../types/campaign';
 import { ProgressTracker } from '../components/ProgressTracker';
+import { BloodProgressTracker } from '../components/BloodProgressTracker';
 import { ImageGallery } from '../components/ImageGallery';
 import { ShareSection } from '../components/ShareSection';
 import { CampaignUpdates } from '../components/CampaignUpdates';
+import { UpdateProgressModal } from '../components/UpdateProgressModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useViewTracking } from '../hooks/useViewTracking';
 import { copyToClipboard } from '../utils/clipboard';
@@ -16,9 +18,12 @@ import styles from './CampaignDetails.module.css';
 export function CampaignDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { showNotification } = useNotification();
   const [campaign, setCampaign] = useState<FundraisingCampaign | BloodDonationCampaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   
   // Track campaign view
   useViewTracking(id);
@@ -67,6 +72,36 @@ export function CampaignDetails() {
   const getCampaignTypeLabel = (type: string) => {
     return type === 'fundraising' ? 'Fundraising Campaign' : 'Blood Donation Campaign';
   };
+
+  const isOwner = user && (campaign as any).userId === user.id;
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await apiService.deleteCampaign(campaign!.id);
+      showNotification({ message: 'Campaign deleted successfully', type: 'success' });
+      navigate('/dashboard');
+    } catch (error) {
+      showNotification({ message: 'Failed to delete campaign', type: 'error' });
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    try {
+      const isHidden = (campaign as any).isHidden || false;
+      await apiService.updateCampaignVisibility(campaign!.id, !isHidden);
+      setCampaign(prev => prev ? { ...prev, isHidden: !isHidden } as any : null);
+      showNotification({
+        message: `Campaign ${!isHidden ? 'hidden' : 'made visible'} successfully`,
+        type: 'success'
+      });
+    } catch (error) {
+      showNotification({ message: 'Failed to update campaign visibility', type: 'error' });
+    }
+  };
   
   return (
     <div className={styles.campaignDetails}>
@@ -81,10 +116,47 @@ export function CampaignDetails() {
       )}
       
       <div className={styles.header}>
-        <h1 className={styles.title}>{campaign.title}</h1>
-        <p className={styles.type}>
-          {getCampaignTypeLabel(campaign.type)}
-        </p>
+        <div className={styles.headerContent}>
+          <div>
+            <h1 className={styles.title}>{campaign.title}</h1>
+            <p className={styles.type}>
+              {getCampaignTypeLabel(campaign.type)}
+            </p>
+          </div>
+          
+          {isOwner && (
+            <div className={styles.ownerActions}>
+              <button
+                onClick={() => setShowUpdateModal(true)}
+                className={styles.updateButton}
+                title="Update progress"
+              >
+                <FaChartLine /> Update Progress
+              </button>
+              <Link 
+                to={`/campaign/${campaign.id}/edit`}
+                className={styles.editButton}
+                title="Edit campaign"
+              >
+                <FaEdit /> Edit
+              </Link>
+              <button
+                onClick={handleToggleVisibility}
+                className={styles.visibilityButton}
+                title={(campaign as any).isHidden ? 'Make visible' : 'Hide campaign'}
+              >
+                {(campaign as any).isHidden ? <><FaEye /> Show</> : <><FaEyeSlash /> Hide</>}
+              </button>
+              <button
+                onClick={handleDelete}
+                className={styles.deleteButton}
+                title="Delete campaign"
+              >
+                <FaTrash /> Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className={styles.content}>
@@ -109,7 +181,10 @@ export function CampaignDetails() {
         )}
         
         {campaign.type === 'blood-donation' && (
-          <BloodDonationInfo campaign={campaign} />
+          <>
+            <BloodDonationInfo campaign={campaign} />
+            <BloodProgressTracker campaign={campaign} />
+          </>
         )}
         
         <ShareSection campaign={campaign} />
@@ -119,6 +194,14 @@ export function CampaignDetails() {
           isOwner={user?.id === (campaign as any).userId}
         />
       </div>
+
+      {showUpdateModal && (
+        <UpdateProgressModal
+          campaign={campaign}
+          onClose={() => setShowUpdateModal(false)}
+          onUpdate={(updated) => setCampaign(updated as any)}
+        />
+      )}
     </div>
   );
 }
