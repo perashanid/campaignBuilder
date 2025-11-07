@@ -12,6 +12,14 @@ export class DevSetup {
     if (import.meta.env.DEV) {
       console.log('✅ Development mode - using API backend');
       
+      // Check AI feature availability
+      if (import.meta.env.VITE_GEMINI_API_KEY && import.meta.env.VITE_GEMINI_API_KEY !== 'your_gemini_api_key_here') {
+        console.log('✨ AI Writing Assistant is enabled');
+      } else {
+        console.log('💡 AI Writing Assistant available! Add VITE_GEMINI_API_KEY to .env.local');
+        console.log('   Get your key at: https://aistudio.google.com/app/apikey');
+      }
+      
       // Add development helpers to window object
       if (typeof window !== 'undefined') {
         (window as any).devUtils = {
@@ -50,5 +58,6 @@ export class DevSetup {
     console.log('  - Dev:', import.meta.env.DEV);
     console.log('  - Prod:', import.meta.env.PROD);
     console.log('  - API URL:', import.meta.env.VITE_API_URL || 'Not set');
+    console.log('  - AI Assistant:', import.meta.env.VITE_GEMINI_API_KEY ? '✅ Configured' : '❌ Not configured');
   }
 }

@@ -187,3 +187,6 @@ test-runner.js
 # Documentation files (markdown)
 *.md
 !README.md
+!AI_*.md
+!QUICK_START_AI.md
+!ANALYTICS_FEATURE.md
