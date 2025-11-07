@@ -11,8 +11,15 @@ export async function improveTextWithGemini(
   fieldType: 'title' | 'description',
   campaignType: 'fundraising' | 'blood-donation'
 ): Promise<GeminiSuggestion> {
+  console.log('🔍 Gemini API Key present:', !!GEMINI_API_KEY);
+  console.log('🔍 API Key preview:', GEMINI_API_KEY?.substring(0, 10) + '...');
+  
   if (!GEMINI_API_KEY) {
     throw new Error('Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
+  }
+  
+  if (GEMINI_API_KEY === 'your_gemini_api_key_here') {
+    throw new Error('Please replace the placeholder API key with your actual Gemini API key.');
   }
 
   const prompts = {
@@ -114,8 +121,10 @@ Format your response as JSON:
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get AI suggestions');
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error?.message || `API request failed with status ${response.status}`;
+      console.error('Gemini API Error:', errorMessage, errorData);
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
