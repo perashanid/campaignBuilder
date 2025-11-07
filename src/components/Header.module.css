@@ -159,22 +159,72 @@
   transform: translateY(-2px);
 }
 
-@media (max-width: 768px) {
+/* Mobile Menu Toggle */
+.mobileMenuButton {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  transition: all var(--transition-normal);
+}
+
+.mobileMenuButton:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 968px) {
+  .header {
+    padding: var(--spacing-sm) 0;
+  }
+
   .container {
     padding: 0 var(--spacing-md);
+    flex-wrap: wrap;
   }
   
   .logoText {
     font-size: 1.25rem;
   }
   
+  .mobileMenuButton {
+    display: block;
+    order: 3;
+  }
+  
   .nav {
-    gap: var(--spacing-md);
+    display: none;
+    width: 100%;
+    order: 4;
+    flex-direction: column;
+    gap: 0;
+    margin-top: var(--spacing-md);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .nav.mobileOpen {
+    display: flex;
   }
   
   .navLink {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.875rem;
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    width: 100%;
+    border-radius: var(--radius-md);
+  }
+  
+  .navLink::after {
+    display: none;
+  }
+
+  .actions {
+    order: 2;
+    gap: var(--spacing-sm);
   }
 
   .userName {
@@ -187,7 +237,28 @@
 
   .loginButton,
   .registerButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .logoText {
+    font-size: 1.1rem;
+  }
+  
+  .loginButton,
+  .registerButton {
     padding: var(--spacing-xs);
+    font-size: 0.8rem;
+  }
+  
+  .logoutButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.8rem;
   }
 }
