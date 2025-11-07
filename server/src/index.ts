@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
 import dotenv from 'dotenv';
-import { pool } from './db/index.js';
+import { connectDB, closeDB } from './db/index.js';
 import campaignsRouter from './routes/campaigns.js';
 import authRouter from './routes/auth.js';
 
@@ -14,15 +14,31 @@ const app = new Hono();
 const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
 app.use('*', cors({
   origin: corsOrigins,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Middleware to ensure DB is connected
+app.use('*', async (c, next) => {
+  try {
+    await connectDB();
+    await next();
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return c.json({ 
+      error: { 
+        code: 'DATABASE_ERROR', 
+        message: 'Database connection failed' 
+      } 
+    }, 500);
+  }
+});
 
 // Health check
 app.get('/health', async (c) => {
   try {
-    // Test database connection
-    const result = await pool.query('SELECT 1');
+    const db = await connectDB();
+    await db.admin().ping();
     return c.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
@@ -66,42 +82,39 @@ app.onError((err: Error, c) => {
 
 const port = parseInt(process.env.PORT || '3001');
 
-// Auto-setup database on first run
-async function setupDatabase() {
+// Setup database and start server
+async function startServer() {
   try {
-    // Check if campaigns table exists
-    const result = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'campaigns'
-      );
-    `);
+    console.log('🔄 Connecting to MongoDB...');
+    await connectDB();
     
-    if (!result.rows[0].exists) {
-      console.log('🔄 Setting up database for first time...');
-      const { migrate } = await import('./db/migrate.js');
-      await migrate();
-      
-      // Only seed if no campaigns exist
-      const campaignCount = await pool.query('SELECT COUNT(*) FROM campaigns');
-      if (parseInt(campaignCount.rows[0].count) === 0) {
-        console.log('🌱 Adding sample data...');
-        // Import and run seed function here if needed
-      }
-    }
+    console.log('🔄 Running database migrations...');
+    const { migrate } = await import('./db/migrate.js');
+    await migrate();
+    
+    console.log(`🚀 Starting server on http://localhost:${port}`);
+    serve({
+      fetch: app.fetch,
+      port,
+    });
+    console.log(`✅ Server running on http://localhost:${port}`);
   } catch (error) {
-    console.log('⚠️ Database setup skipped:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
 }
 
-console.log(`🚀 Server starting on http://localhost:${port}`);
+// Handle shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🔌 Shutting down gracefully...');
+  await closeDB();
+  process.exit(0);
+});
 
-// Setup database then start server
-setupDatabase().then(() => {
-  serve({
-    fetch: app.fetch,
-    port,
-  });
-  console.log(`✅ Server running on http://localhost:${port}`);
-}).catch(console.error);
+process.on('SIGTERM', async () => {
+  console.log('\n🔌 Shutting down gracefully...');
+  await closeDB();
+  process.exit(0);
+});
+
+startServer();

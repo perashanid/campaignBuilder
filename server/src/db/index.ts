@@ -1,46 +1,67 @@
-import { Pool } from 'pg';
+import { MongoClient, Db } from 'mongodb';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  // Connection pool settings to handle connection resets
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'campaign_platform';
 
-// Test connection
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
-});
+let client: MongoClient | null = null;
+let db: Db | null = null;
+let connecting: Promise<Db> | null = null;
 
-pool.on('error', (err: Error) => {
-  console.error('❌ PostgreSQL connection error:', err);
-});
+export async function connectDB(): Promise<Db> {
+  // If already connected, return the db
+  if (db && client) {
+    return db;
+  }
 
-// Helper function for database queries with retry logic
-export async function queryWithRetry(text: string, params?: any[], retries = 3): Promise<any> {
-  for (let i = 0; i < retries; i++) {
+  // If connection is in progress, wait for it
+  if (connecting) {
+    return connecting;
+  }
+
+  // Start new connection
+  connecting = (async () => {
     try {
-      const result = await pool.query(text, params);
-      return result;
-    } catch (error: any) {
-      console.error(`Database query attempt ${i + 1} failed:`, error.message);
+      console.log('🔄 Connecting to MongoDB...');
+      console.log('📍 MongoDB URI:', MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@'));
       
-      if (i === retries - 1) {
-        throw error;
-      }
+      client = new MongoClient(MONGODB_URI);
+      await client.connect();
       
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      // Test the connection
+      await client.db('admin').command({ ping: 1 });
+      
+      db = client.db(DB_NAME);
+      console.log(`✅ Connected to MongoDB database: ${DB_NAME}`);
+      
+      connecting = null;
+      return db;
+    } catch (error) {
+      connecting = null;
+      console.error('❌ MongoDB connection error:', error);
+      throw error;
     }
+  })();
+
+  return connecting;
+}
+
+export async function closeDB(): Promise<void> {
+  if (client) {
+    await client.close();
+    client = null;
+    db = null;
+    console.log('🔌 MongoDB connection closed');
   }
 }
 
-export { pool };
+export function getDB(): Db {
+  if (!db) {
+    throw new Error('Database not initialized. Call connectDB() first.');
+  }
+  return db;
+}
+
 export * from './schema.js';

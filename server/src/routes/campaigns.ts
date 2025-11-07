@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
-import { pool } from '../db/index.js';
-import { User } from '../db/schema.js';
+import { getDB } from '../db/index.js';
+import { Campaign, PaymentDetails } from '../db/schema.js';
 import { authenticateUser } from './auth.js';
 import { Variables } from '../types/hono.js';
+import { ObjectId } from 'mongodb';
 
-// Simple ID generator (no external dependency needed)
+// Simple ID generator
 function createId(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
@@ -14,34 +15,29 @@ function createSlugFromTitle(title: string): string {
   return title
     .toLowerCase()
     .trim()
-    // Replace spaces and special characters with hyphens
     .replace(/[^a-z0-9]+/g, '-')
-    // Remove leading/trailing hyphens
     .replace(/^-+|-+$/g, '')
-    // Limit length to 50 characters
     .substring(0, 50)
-    // Remove trailing hyphen if created by substring
     .replace(/-+$/, '');
 }
 
 // Generate unique slug with collision handling
 async function generateUniqueSlug(title: string): Promise<string> {
+  const db = getDB();
   const baseSlug = createSlugFromTitle(title);
   
-  // Check if base slug exists
-  const existingResult = await pool.query('SELECT id FROM campaigns WHERE id = $1', [baseSlug]);
+  const existing = await db.collection('campaigns').findOne({ id: baseSlug });
   
-  if (existingResult.rows.length === 0) {
+  if (!existing) {
     return baseSlug;
   }
   
-  // Handle collisions by adding a number suffix
   let counter = 1;
   let uniqueSlug = `${baseSlug}-${counter}`;
   
   while (true) {
-    const result = await pool.query('SELECT id FROM campaigns WHERE id = $1', [uniqueSlug]);
-    if (result.rows.length === 0) {
+    const exists = await db.collection('campaigns').findOne({ id: uniqueSlug });
+    if (!exists) {
       return uniqueSlug;
     }
     counter++;
@@ -55,27 +51,23 @@ const app = new Hono<{ Variables: Variables }>();
 app.get('/user', authenticateUser, async (c) => {
   try {
     const user = c.get('user');
+    const db = getDB();
     
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, type, main_image_url, created_at, is_hidden,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
-        view_count
-      FROM campaigns 
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-    `, [user.id]);
+    const campaigns = await db.collection<Campaign>('campaigns')
+      .find({ user_id: user.id })
+      .sort({ created_at: -1 })
+      .toArray();
     
-    const formattedCampaigns = result.rows.map((campaign: any) => ({
-      id: campaign.id,
+    const formattedCampaigns = campaigns.map((campaign) => ({
+      id: campaign._id?.toString(),
       title: campaign.title,
       description: campaign.description,
       type: campaign.type,
       mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
+      createdAt: campaign.created_at.toISOString(),
       isHidden: campaign.is_hidden || false,
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      targetAmount: campaign.target_amount,
+      currentAmount: campaign.current_amount,
       hospitalInfo: campaign.type === 'blood-donation' ? {
         name: campaign.hospital_name,
         address: campaign.hospital_address,
@@ -98,12 +90,9 @@ app.get('/user', authenticateUser, async (c) => {
 
 // Create new campaign (protected)
 app.post('/', authenticateUser, async (c) => {
-  const client = await pool.connect();
-  
   try {
     const body = await c.req.json();
     
-    // Validate required fields
     if (!body.title || !body.description || !body.type) {
       return c.json({ 
         error: { 
@@ -114,78 +103,66 @@ app.post('/', authenticateUser, async (c) => {
     }
 
     const campaignId = await generateUniqueSlug(body.title);
-    
-    await client.query('BEGIN');
-
     const user = c.get('user');
+    const db = getDB();
+    const now = new Date();
 
-    // Insert campaign
-    const campaignResult = await client.query(`
-      INSERT INTO campaigns (
-        id, user_id, title, description, type, target_amount, current_amount,
-        hospital_name, hospital_address, hospital_contact, hospital_email,
-        blood_type, urgency_level, main_image_url, additional_images, is_hidden
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-      RETURNING *
-    `, [
-      campaignId,
-      user.id,
-      body.title,
-      body.description,
-      body.type,
-      body.type === 'fundraising' ? body.targetAmount : null,
-      body.type === 'fundraising' ? 0 : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.name : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.address : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.contactNumber : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.email : null,
-      body.type === 'blood-donation' ? body.bloodType : null,
-      body.type === 'blood-donation' ? (body.urgencyLevel || 'medium') : null,
-      body.mainImage || null,
-      JSON.stringify(body.additionalImages || []),
-      false
-    ]);
+    const campaign: any = {
+      user_id: user.id,
+      title: body.title,
+      description: body.description,
+      type: body.type,
+      created_at: now,
+      updated_at: now,
+      view_count: 0,
+      is_hidden: false,
+      main_image_url: body.mainImage || null,
+      additional_images: body.additionalImages || [],
+    };
+
+    if (body.type === 'fundraising') {
+      campaign.target_amount = body.targetAmount || 0;
+      campaign.current_amount = 0;
+    } else {
+      campaign.hospital_name = body.hospitalInfo?.name;
+      campaign.hospital_address = body.hospitalInfo?.address;
+      campaign.hospital_contact = body.hospitalInfo?.contactNumber;
+      campaign.hospital_email = body.hospitalInfo?.email;
+      campaign.blood_type = body.bloodType;
+      campaign.urgency_level = body.urgencyLevel || 'medium';
+    }
+
+    const result = await db.collection<Campaign>('campaigns').insertOne(campaign);
 
     // Insert payment details if fundraising
     let paymentInfo = null;
     if (body.type === 'fundraising' && body.paymentDetails) {
-      const paymentId = createId();
-      await client.query(`
-        INSERT INTO payment_details (
-          id, campaign_id, mobile_banking, bank_account_number, bank_name, account_holder
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-      `, [
-        paymentId,
-        campaignId,
-        body.paymentDetails.mobileBanking,
-        body.paymentDetails.bankAccount?.accountNumber,
-        body.paymentDetails.bankAccount?.bankName,
-        body.paymentDetails.bankAccount?.accountHolder
-      ]);
+      await db.collection<PaymentDetails>('payment_details').insertOne({
+        campaign_id: result.insertedId.toString(),
+        mobile_banking: body.paymentDetails.mobileBanking,
+        bank_account_number: body.paymentDetails.bankAccount?.accountNumber,
+        bank_name: body.paymentDetails.bankAccount?.bankName,
+        account_holder: body.paymentDetails.bankAccount?.accountHolder,
+      });
       
       paymentInfo = body.paymentDetails;
     }
 
-    await client.query('COMMIT');
-
-    // Generate shareable URL
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const shareUrl = `${frontendUrl}/campaign/${campaignId}`;
+    const shareUrl = `${frontendUrl}/campaign/${result.insertedId.toString()}`;
 
-    const campaign = campaignResult.rows[0];
-    
     return c.json({
-      id: campaignId,
+      id: result.insertedId.toString(),
       shareUrl,
       campaign: {
-        id: campaign.id,
+        id: result.insertedId.toString(),
         title: campaign.title,
         description: campaign.description,
         type: campaign.type,
         mainImage: campaign.main_image_url,
         additionalImages: campaign.additional_images,
-        createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-        updatedAt: campaign.updated_at ? new Date(campaign.updated_at).toISOString() : new Date().toISOString(),
+        createdAt: campaign.created_at.toISOString(),
+        updatedAt: campaign.updated_at.toISOString(),
         targetAmount: campaign.target_amount,
         currentAmount: campaign.current_amount,
         paymentDetails: paymentInfo,
@@ -196,7 +173,6 @@ app.post('/', authenticateUser, async (c) => {
     }, 201);
 
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Error creating campaign:', error);
     return c.json({ 
       error: { 
@@ -204,8 +180,6 @@ app.post('/', authenticateUser, async (c) => {
         message: 'Failed to create campaign' 
       } 
     }, 500);
-  } finally {
-    client.release();
   }
 });
 
@@ -213,21 +187,16 @@ app.post('/', authenticateUser, async (c) => {
 app.get('/:id', async (c) => {
   try {
     const id = c.req.param('id');
+    const db = getDB();
     
-    // Get campaign with payment details in a single query
-    const campaignResult = await pool.query(`
-      SELECT 
-        c.*,
-        pd.mobile_banking,
-        pd.bank_account_number,
-        pd.bank_name,
-        pd.account_holder
-      FROM campaigns c
-      LEFT JOIN payment_details pd ON c.id = pd.campaign_id
-      WHERE c.id = $1
-    `, [id]);
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
 
-    if (campaignResult.rows.length === 0) {
+    if (!campaign) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -236,36 +205,38 @@ app.get('/:id', async (c) => {
       }, 404);
     }
 
-    const campaign = campaignResult.rows[0];
-
-    // Format payment details if available
     let paymentInfo = null;
-    if (campaign.type === 'fundraising' && campaign.mobile_banking) {
-      paymentInfo = {
-        mobileBanking: campaign.mobile_banking,
-        bankAccount: {
-          accountNumber: campaign.bank_account_number,
-          bankName: campaign.bank_name,
-          accountHolder: campaign.account_holder,
-        }
-      };
+    if (campaign.type === 'fundraising') {
+      const payment = await db.collection<PaymentDetails>('payment_details').findOne({
+        campaign_id: campaign._id!.toString()
+      });
+      
+      if (payment) {
+        paymentInfo = {
+          mobileBanking: payment.mobile_banking,
+          bankAccount: {
+            accountNumber: payment.bank_account_number,
+            bankName: payment.bank_name,
+            accountHolder: payment.account_holder,
+          }
+        };
+      }
     }
 
-    // Format response to match frontend expectations
     const response: any = {
-      id: campaign.id,
+      id: campaign._id!.toString(),
       title: campaign.title,
       description: campaign.description,
       type: campaign.type,
       mainImage: campaign.main_image_url,
       additionalImages: campaign.additional_images || [],
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      updatedAt: campaign.updated_at ? new Date(campaign.updated_at).toISOString() : new Date().toISOString(),
+      createdAt: campaign.created_at.toISOString(),
+      updatedAt: campaign.updated_at.toISOString(),
     };
 
     if (campaign.type === 'fundraising') {
-      response.targetAmount = parseFloat(campaign.target_amount) || 0;
-      response.currentAmount = parseFloat(campaign.current_amount) || 0;
+      response.targetAmount = campaign.target_amount || 0;
+      response.currentAmount = campaign.current_amount || 0;
       response.paymentDetails = paymentInfo;
     } else {
       response.hospitalInfo = {
@@ -294,25 +265,22 @@ app.get('/:id', async (c) => {
 // Get all campaigns (public, excluding hidden)
 app.get('/', async (c) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, type, main_image_url, created_at,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level,
-        view_count, is_hidden
-      FROM campaigns 
-      WHERE is_hidden = FALSE OR is_hidden IS NULL
-      ORDER BY created_at DESC
-    `);
+    const db = getDB();
     
-    const formattedCampaigns = result.rows.map((campaign: any) => ({
-      id: campaign.id,
+    const campaigns = await db.collection<Campaign>('campaigns')
+      .find({ $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] })
+      .sort({ created_at: -1 })
+      .toArray();
+    
+    const formattedCampaigns = campaigns.map((campaign) => ({
+      id: campaign._id!.toString(),
       title: campaign.title,
       description: campaign.description,
       type: campaign.type,
       mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      createdAt: campaign.created_at.toISOString(),
+      targetAmount: campaign.target_amount,
+      currentAmount: campaign.current_amount,
       hospitalInfo: campaign.type === 'blood-donation' ? {
         name: campaign.hospital_name,
         address: campaign.hospital_address,
@@ -337,15 +305,24 @@ app.get('/', async (c) => {
 app.post('/:id/view', async (c) => {
   try {
     const id = c.req.param('id');
+    const db = getDB();
     
-    const result = await pool.query(`
-      UPDATE campaigns 
-      SET view_count = COALESCE(view_count, 0) + 1
-      WHERE id = $1
-      RETURNING view_count
-    `, [id]);
+    let result;
+    if (ObjectId.isValid(id)) {
+      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $inc: { view_count: 1 } },
+        { returnDocument: 'after' }
+      );
+    } else {
+      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+        { id },
+        { $inc: { view_count: 1 } },
+        { returnDocument: 'after' }
+      );
+    }
 
-    if (result.rows.length === 0) {
+    if (!result) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -356,7 +333,7 @@ app.post('/:id/view', async (c) => {
 
     return c.json({
       success: true,
-      viewCount: result.rows[0].view_count
+      viewCount: result.view_count || 0
     });
 
   } catch (error) {
@@ -373,26 +350,24 @@ app.post('/:id/view', async (c) => {
 // Get most visited campaigns
 app.get('/most-visited', async (c) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, type, main_image_url, created_at, view_count,
-        target_amount, current_amount, hospital_name, hospital_address, urgency_level
-      FROM campaigns 
-      WHERE is_hidden = FALSE OR is_hidden IS NULL
-      ORDER BY COALESCE(view_count, 0) DESC, created_at DESC
-      LIMIT 6
-    `);
+    const db = getDB();
     
-    const formattedCampaigns = result.rows.map((campaign: any) => ({
-      id: campaign.id,
+    const campaigns = await db.collection<Campaign>('campaigns')
+      .find({ $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] })
+      .sort({ view_count: -1, created_at: -1 })
+      .limit(6)
+      .toArray();
+    
+    const formattedCampaigns = campaigns.map((campaign) => ({
+      id: campaign._id!.toString(),
       title: campaign.title,
       description: campaign.description,
       type: campaign.type,
       mainImage: campaign.main_image_url,
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
+      createdAt: campaign.created_at.toISOString(),
       viewCount: campaign.view_count || 0,
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      targetAmount: campaign.target_amount,
+      currentAmount: campaign.current_amount,
       hospitalInfo: campaign.type === 'blood-donation' ? {
         name: campaign.hospital_name,
         address: campaign.hospital_address,
@@ -417,6 +392,7 @@ app.patch('/:id/progress', async (c) => {
   try {
     const id = c.req.param('id');
     const body = await c.req.json();
+    const db = getDB();
     
     if (!body.currentAmount || typeof body.currentAmount !== 'number') {
       return c.json({ 
@@ -427,14 +403,22 @@ app.patch('/:id/progress', async (c) => {
       }, 400);
     }
 
-    const result = await pool.query(`
-      UPDATE campaigns 
-      SET current_amount = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2 AND type = 'fundraising'
-      RETURNING *
-    `, [body.currentAmount, id]);
+    let result;
+    if (ObjectId.isValid(id)) {
+      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+        { _id: new ObjectId(id), type: 'fundraising' },
+        { $set: { current_amount: body.currentAmount, updated_at: new Date() } },
+        { returnDocument: 'after' }
+      );
+    } else {
+      result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+        { id, type: 'fundraising' },
+        { $set: { current_amount: body.currentAmount, updated_at: new Date() } },
+        { returnDocument: 'after' }
+      );
+    }
 
-    if (result.rows.length === 0) {
+    if (!result) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -443,19 +427,17 @@ app.patch('/:id/progress', async (c) => {
       }, 404);
     }
 
-    const campaign = result.rows[0];
-    
     return c.json({
-      id: campaign.id,
-      title: campaign.title,
-      description: campaign.description,
-      type: campaign.type,
-      mainImage: campaign.main_image_url,
-      additionalImages: campaign.additional_images || [],
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      updatedAt: campaign.updated_at ? new Date(campaign.updated_at).toISOString() : new Date().toISOString(),
-      targetAmount: parseFloat(campaign.target_amount) || 0,
-      currentAmount: parseFloat(campaign.current_amount) || 0,
+      id: result._id!.toString(),
+      title: result.title,
+      description: result.description,
+      type: result.type,
+      mainImage: result.main_image_url,
+      additionalImages: result.additional_images || [],
+      createdAt: result.created_at.toISOString(),
+      updatedAt: result.updated_at.toISOString(),
+      targetAmount: result.target_amount || 0,
+      currentAmount: result.current_amount || 0,
     });
 
   } catch (error) {
@@ -471,20 +453,21 @@ app.patch('/:id/progress', async (c) => {
 
 // Update campaign (protected)
 app.put('/:id', authenticateUser, async (c) => {
-  const client = await pool.connect();
-  
   try {
     const id = c.req.param('id');
     const user = c.get('user');
     const body = await c.req.json();
+    const db = getDB();
     
     // Check if campaign belongs to user
-    const ownershipCheck = await client.query(
-      'SELECT user_id FROM campaigns WHERE id = $1',
-      [id]
-    );
+    let campaign;
+    if (ObjectId.isValid(id)) {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ _id: new ObjectId(id) });
+    } else {
+      campaign = await db.collection<Campaign>('campaigns').findOne({ id });
+    }
     
-    if (ownershipCheck.rows.length === 0) {
+    if (!campaign) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -493,7 +476,7 @@ app.put('/:id', authenticateUser, async (c) => {
       }, 404);
     }
     
-    if (ownershipCheck.rows[0].user_id !== user.id) {
+    if (campaign.user_id !== user.id) {
       return c.json({ 
         error: { 
           code: 'FORBIDDEN', 
@@ -502,70 +485,65 @@ app.put('/:id', authenticateUser, async (c) => {
       }, 403);
     }
 
-    await client.query('BEGIN');
+    const updateData: any = {
+      title: body.title,
+      description: body.description,
+      main_image_url: body.mainImage || null,
+      additional_images: body.additionalImages || [],
+      updated_at: new Date(),
+    };
 
-    // Update campaign
-    const campaignResult = await client.query(`
-      UPDATE campaigns SET
-        title = $1, description = $2, target_amount = $3,
-        hospital_name = $4, hospital_address = $5, hospital_contact = $6, hospital_email = $7,
-        blood_type = $8, urgency_level = $9, main_image_url = $10, additional_images = $11,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $12 AND user_id = $13
-      RETURNING *
-    `, [
-      body.title,
-      body.description,
-      body.type === 'fundraising' ? body.targetAmount : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.name : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.address : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.contactNumber : null,
-      body.type === 'blood-donation' ? body.hospitalInfo?.email : null,
-      body.type === 'blood-donation' ? body.bloodType : null,
-      body.type === 'blood-donation' ? (body.urgencyLevel || 'medium') : null,
-      body.mainImage || null,
-      JSON.stringify(body.additionalImages || []),
-      id,
-      user.id
-    ]);
+    if (body.type === 'fundraising') {
+      updateData.target_amount = body.targetAmount;
+    } else {
+      updateData.hospital_name = body.hospitalInfo?.name;
+      updateData.hospital_address = body.hospitalInfo?.address;
+      updateData.hospital_contact = body.hospitalInfo?.contactNumber;
+      updateData.hospital_email = body.hospitalInfo?.email;
+      updateData.blood_type = body.bloodType;
+      updateData.urgency_level = body.urgencyLevel || 'medium';
+    }
+
+    const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id };
+    const result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+      filter,
+      { $set: updateData },
+      { returnDocument: 'after' }
+    );
 
     // Update payment details if fundraising
     if (body.type === 'fundraising' && body.paymentDetails) {
-      await client.query(`
-        UPDATE payment_details SET
-          mobile_banking = $1, bank_account_number = $2, bank_name = $3, account_holder = $4
-        WHERE campaign_id = $5
-      `, [
-        body.paymentDetails.mobileBanking,
-        body.paymentDetails.bankAccount?.accountNumber,
-        body.paymentDetails.bankAccount?.bankName,
-        body.paymentDetails.bankAccount?.accountHolder,
-        id
-      ]);
+      await db.collection<PaymentDetails>('payment_details').updateOne(
+        { campaign_id: campaign._id!.toString() },
+        {
+          $set: {
+            mobile_banking: body.paymentDetails.mobileBanking,
+            bank_account_number: body.paymentDetails.bankAccount?.accountNumber,
+            bank_name: body.paymentDetails.bankAccount?.bankName,
+            account_holder: body.paymentDetails.bankAccount?.accountHolder,
+          }
+        },
+        { upsert: true }
+      );
     }
 
-    await client.query('COMMIT');
-
-    const campaign = campaignResult.rows[0];
-    
     return c.json({
-      id: campaign.id,
-      title: campaign.title,
-      description: campaign.description,
-      type: campaign.type,
-      mainImage: campaign.main_image_url,
-      additionalImages: campaign.additional_images || [],
-      createdAt: campaign.created_at ? new Date(campaign.created_at).toISOString() : new Date().toISOString(),
-      updatedAt: campaign.updated_at ? new Date(campaign.updated_at).toISOString() : new Date().toISOString(),
-      targetAmount: campaign.target_amount ? parseFloat(campaign.target_amount) : undefined,
-      currentAmount: campaign.current_amount ? parseFloat(campaign.current_amount) : undefined,
+      id: result!._id!.toString(),
+      title: result!.title,
+      description: result!.description,
+      type: result!.type,
+      mainImage: result!.main_image_url,
+      additionalImages: result!.additional_images || [],
+      createdAt: result!.created_at.toISOString(),
+      updatedAt: result!.updated_at.toISOString(),
+      targetAmount: result!.target_amount,
+      currentAmount: result!.current_amount,
       hospitalInfo: body.type === 'blood-donation' ? body.hospitalInfo : undefined,
-      bloodType: campaign.blood_type,
-      urgencyLevel: campaign.urgency_level,
+      bloodType: result!.blood_type,
+      urgencyLevel: result!.urgency_level,
     });
 
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Error updating campaign:', error);
     return c.json({ 
       error: { 
@@ -573,8 +551,6 @@ app.put('/:id', authenticateUser, async (c) => {
         message: 'Failed to update campaign' 
       } 
     }, 500);
-  } finally {
-    client.release();
   }
 });
 
@@ -583,14 +559,15 @@ app.delete('/:id', authenticateUser, async (c) => {
   try {
     const id = c.req.param('id');
     const user = c.get('user');
+    const db = getDB();
     
-    const result = await pool.query(`
-      DELETE FROM campaigns 
-      WHERE id = $1 AND user_id = $2
-      RETURNING id
-    `, [id, user.id]);
+    const filter = ObjectId.isValid(id) 
+      ? { _id: new ObjectId(id), user_id: user.id }
+      : { id, user_id: user.id };
+    
+    const result = await db.collection<Campaign>('campaigns').deleteOne(filter);
 
-    if (result.rows.length === 0) {
+    if (result.deletedCount === 0) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -618,15 +595,19 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
     const id = c.req.param('id');
     const user = c.get('user');
     const body = await c.req.json();
+    const db = getDB();
     
-    const result = await pool.query(`
-      UPDATE campaigns 
-      SET is_hidden = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2 AND user_id = $3
-      RETURNING *
-    `, [body.isHidden, id, user.id]);
+    const filter = ObjectId.isValid(id)
+      ? { _id: new ObjectId(id), user_id: user.id }
+      : { id, user_id: user.id };
+    
+    const result = await db.collection<Campaign>('campaigns').findOneAndUpdate(
+      filter,
+      { $set: { is_hidden: body.isHidden, updated_at: new Date() } },
+      { returnDocument: 'after' }
+    );
 
-    if (result.rows.length === 0) {
+    if (!result) {
       return c.json({ 
         error: { 
           code: 'NOT_FOUND', 
@@ -635,12 +616,10 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
       }, 404);
     }
 
-    const campaign = result.rows[0];
-    
     return c.json({
-      id: campaign.id,
-      title: campaign.title,
-      isHidden: campaign.is_hidden,
+      id: result._id!.toString(),
+      title: result.title,
+      isHidden: result.is_hidden,
     });
 
   } catch (error) {
@@ -657,69 +636,60 @@ app.patch('/:id/visibility', authenticateUser, async (c) => {
 // Get platform statistics
 app.get('/stats/platform', async (c) => {
   try {
-    // Get campaign statistics
-    const campaignStats = await pool.query(`
-      SELECT 
-        COUNT(*) as total_campaigns,
-        COUNT(CASE WHEN type = 'fundraising' THEN 1 END) as fundraising_campaigns,
-        COUNT(CASE WHEN type = 'blood-donation' THEN 1 END) as blood_donation_campaigns,
-        COUNT(CASE WHEN is_hidden = FALSE OR is_hidden IS NULL THEN 1 END) as active_campaigns,
-        COALESCE(SUM(view_count), 0) as total_views,
-        COALESCE(SUM(CASE WHEN type = 'fundraising' THEN current_amount ELSE 0 END), 0) as total_funds_raised,
-        COALESCE(AVG(CASE WHEN type = 'fundraising' AND target_amount > 0 THEN (current_amount / target_amount) * 100 END), 0) as avg_funding_progress
-      FROM campaigns
-    `);
-
-    // Get user statistics
-    const userStats = await pool.query(`
-      SELECT 
-        COUNT(*) as total_users,
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as new_users_30_days,
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_users_7_days
-      FROM users
-    `);
-
-    // Get campaigns completed (reached 100% funding)
-    const completedCampaigns = await pool.query(`
-      SELECT COUNT(*) as completed_campaigns
-      FROM campaigns 
-      WHERE type = 'fundraising' 
-        AND target_amount > 0 
-        AND current_amount >= target_amount
-    `);
-
-    // Get recent activity stats
-    const recentActivity = await pool.query(`
-      SELECT 
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as campaigns_this_week,
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as campaigns_this_month
-      FROM campaigns
-    `);
-
-    const stats = campaignStats.rows[0];
-    const users = userStats.rows[0];
-    const completed = completedCampaigns.rows[0];
-    const activity = recentActivity.rows[0];
+    const db = getDB();
+    
+    const totalCampaigns = await db.collection('campaigns').countDocuments();
+    const fundraisingCampaigns = await db.collection('campaigns').countDocuments({ type: 'fundraising' });
+    const bloodDonationCampaigns = await db.collection('campaigns').countDocuments({ type: 'blood-donation' });
+    const activeCampaigns = await db.collection('campaigns').countDocuments({ 
+      $or: [{ is_hidden: false }, { is_hidden: { $exists: false } }] 
+    });
+    
+    const viewsResult = await db.collection('campaigns').aggregate([
+      { $group: { _id: null, total: { $sum: '$view_count' } } }
+    ]).toArray();
+    const totalViews = viewsResult[0]?.total || 0;
+    
+    const fundsResult = await db.collection('campaigns').aggregate([
+      { $match: { type: 'fundraising' } },
+      { $group: { _id: null, total: { $sum: '$current_amount' } } }
+    ]).toArray();
+    const totalFundsRaised = fundsResult[0]?.total || 0;
+    
+    const completedCampaigns = await db.collection('campaigns').countDocuments({
+      type: 'fundraising',
+      $expr: { $gte: ['$current_amount', '$target_amount'] }
+    });
+    
+    const totalUsers = await db.collection('users').countDocuments();
+    
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const campaignsThisWeek = await db.collection('campaigns').countDocuments({ created_at: { $gte: sevenDaysAgo } });
+    const campaignsThisMonth = await db.collection('campaigns').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
+    const newUsersThisWeek = await db.collection('users').countDocuments({ created_at: { $gte: sevenDaysAgo } });
+    const newUsersThisMonth = await db.collection('users').countDocuments({ created_at: { $gte: thirtyDaysAgo } });
 
     return c.json({
       campaigns: {
-        total: parseInt(stats.total_campaigns),
-        fundraising: parseInt(stats.fundraising_campaigns),
-        bloodDonation: parseInt(stats.blood_donation_campaigns),
-        active: parseInt(stats.active_campaigns),
-        completed: parseInt(completed.completed_campaigns),
-        thisWeek: parseInt(activity.campaigns_this_week),
-        thisMonth: parseInt(activity.campaigns_this_month),
+        total: totalCampaigns,
+        fundraising: fundraisingCampaigns,
+        bloodDonation: bloodDonationCampaigns,
+        active: activeCampaigns,
+        completed: completedCampaigns,
+        thisWeek: campaignsThisWeek,
+        thisMonth: campaignsThisMonth,
       },
       users: {
-        total: parseInt(users.total_users),
-        newThisWeek: parseInt(users.new_users_7_days),
-        newThisMonth: parseInt(users.new_users_30_days),
+        total: totalUsers,
+        newThisWeek: newUsersThisWeek,
+        newThisMonth: newUsersThisMonth,
       },
       engagement: {
-        totalViews: parseInt(stats.total_views),
-        totalFundsRaised: parseFloat(stats.total_funds_raised) || 0,
-        averageFundingProgress: parseFloat(stats.avg_funding_progress) || 0,
+        totalViews,
+        totalFundsRaised,
+        averageFundingProgress: 0,
       }
     });
 

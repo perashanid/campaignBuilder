@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongodb';
+
 export interface User {
-  id: string;
+  _id?: ObjectId;
   email: string;
   name: string;
   password_hash: string;
@@ -8,7 +10,7 @@ export interface User {
 }
 
 export interface Campaign {
-  id: string;
+  _id?: ObjectId;
   user_id: string;
   title: string;
   description: string;
@@ -30,7 +32,7 @@ export interface Campaign {
 }
 
 export interface PaymentDetails {
-  id: string;
+  _id?: ObjectId;
   campaign_id: string;
   mobile_banking?: string;
   bank_account_number?: string;
@@ -39,7 +41,7 @@ export interface PaymentDetails {
 }
 
 export interface Session {
-  id: string;
+  _id?: ObjectId;
   user_id: string;
   token: string;
   expires_at: Date;
