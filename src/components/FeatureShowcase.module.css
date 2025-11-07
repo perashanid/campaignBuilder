@@ -1,10 +1,10 @@
 .showcase {
   padding: 6rem 4rem;
   width: 100%;
-  background: linear-gradient(135deg, #E5DDD4 0%, #DDD5CC 100%);
+  background: linear-gradient(135deg, #C0BADB 0%, #B8B2D6 100%);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  border-top: 1px solid rgba(162, 170, 219, 0.15);
-  border-bottom: 1px solid rgba(162, 170, 219, 0.15);
+  border-top: 1px solid rgba(192, 186, 219, 0.3);
+  border-bottom: 1px solid rgba(192, 186, 219, 0.3);
 }
 
 [data-theme="dark"] .showcase {
@@ -26,89 +26,37 @@
   position: relative;
 }
 
-.mockup {
+.imageWrapper {
   position: relative;
-  padding: var(--spacing-xl);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 3px solid rgba(162, 170, 219, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.mockupScreen {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 20px 60px rgba(255, 180, 120, 0.25);
-  overflow: hidden;
-  border: 2px solid rgba(255, 200, 150, 0.3);
-  transform: perspective(1000px) rotateY(-5deg);
+.imageWrapper:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+}
+
+.showcaseImage {
+  width: 100%;
+  height: auto;
+  display: block;
   transition: transform 0.3s ease;
 }
 
-[data-theme="dark"] .mockupScreen {
-  background: rgba(45, 45, 58, 0.9);
-  border: 2px solid rgba(162, 170, 219, 0.25);
+.imageWrapper:hover .showcaseImage {
+  transform: scale(1.05);
 }
 
-.mockupScreen:hover {
-  transform: perspective(1000px) rotateY(0deg);
+[data-theme="dark"] .showcaseImage {
+  opacity: 0.9;
 }
 
-.mockupHeader {
-  display: flex;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
-  background: rgba(255, 240, 230, 0.6);
-  border-bottom: 1px solid rgba(162, 170, 219, 0.15);
-}
-
-[data-theme="dark"] .mockupHeader {
-  background: rgba(38, 38, 48, 0.4);
-  border-bottom: 1px solid rgba(162, 170, 219, 0.2);
-}
-
-.dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff5f56, #ff9500);
-}
-
-.dot:nth-child(2) {
-  background: linear-gradient(135deg, #ffbd2e, #ffd700);
-}
-
-.dot:nth-child(3) {
-  background: linear-gradient(135deg, #27c93f, #00d084);
-}
-
-.mockupContent {
-  padding: var(--spacing-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.mockupCard {
-  height: 80px;
-  background: linear-gradient(135deg, 
-    rgba(162, 170, 219, 0.12), 
-    rgba(192, 201, 238, 0.12));
-  border-radius: var(--radius-lg);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.mockupCard:nth-child(2) {
-  animation-delay: 0.3s;
-}
-
-.mockupCard:nth-child(3) {
-  animation-delay: 0.6s;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
+[data-theme="dark"] .imageWrapper {
+  border: 3px solid rgba(162, 170, 219, 0.4);
 }
 
 .contentSection {

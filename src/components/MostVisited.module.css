@@ -1,10 +1,25 @@
 .mostVisited {
   margin-bottom: 3rem;
+  padding: 6rem 4rem;
+  background: linear-gradient(135deg, #C0BADB 0%, #B8B2D6 100%);
+  border-top: 1px solid rgba(192, 186, 219, 0.4);
+  border-bottom: 1px solid rgba(192, 186, 219, 0.4);
+  margin: 0;
+}
+
+[data-theme="dark"] .mostVisited {
+  background: linear-gradient(135deg, rgba(38, 38, 50, 0.38) 0%, rgba(33, 33, 45, 0.35) 100%);
+  border-top: 1px solid rgba(162, 170, 219, 0.25);
+  border-bottom: 1px solid rgba(162, 170, 219, 0.25);
 }
 
 .header {
   text-align: center;
   margin-bottom: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 3rem;
 }
 
 .title {
@@ -25,6 +40,9 @@
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .loading {
@@ -36,6 +54,10 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
+  .mostVisited {
+    padding: 3rem 1.5rem;
+  }
+
   .title {
     font-size: 1.75rem;
   }
@@ -51,11 +73,11 @@
 }
 
 @media (max-width: 480px) {
+  .mostVisited {
+    padding: 2rem 1rem;
+  }
+
   .title {
     font-size: 1.5rem;
-  }
-  
-  .mostVisited {
-    margin-bottom: 2rem;
   }
 }
