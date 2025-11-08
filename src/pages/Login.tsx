@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiMail, FiLock, FiLogIn, FiUserPlus } from 'react-icons/fi';
+import { FiMail, FiLock, FiLogIn, FiUserPlus, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { LoginCredentials } from '../types/user';
@@ -14,6 +14,7 @@ export function Login() {
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -92,17 +93,27 @@ export function Login() {
               <FiLock className={styles.labelIcon} />
               Password
             </label>
-            <motion.input
-              type="password"
-              id="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              required
-              className={styles.input}
-              placeholder="Enter your password"
-              whileFocus={{ scale: 1.01 }}
-            />
+            <div className={styles.passwordWrapper}>
+              <motion.input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={credentials.password}
+                onChange={handleChange}
+                required
+                className={styles.input}
+                placeholder="Enter your password"
+                whileFocus={{ scale: 1.01 }}
+              />
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           <AnimatedButton

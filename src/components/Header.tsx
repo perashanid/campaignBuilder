@@ -1,9 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiGrid, FiLayout, FiPlusCircle, FiBarChart2, FiMenu, FiX } from 'react-icons/fi';
+import { FiGrid, FiLayout, FiPlusCircle, FiBarChart2 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
-import { useState } from 'react';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -14,23 +13,9 @@ interface HeaderProps {
 export function Header({ className = '', onMouseEnter }: HeaderProps) {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getNavLinkClass = (path: string) => {
     return `${styles.navLink} ${location.pathname === path ? styles.active : ''}`;
-  };
-
-  const handleLogout = () => {
-    logout();
-    setMobileMenuOpen(false);
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
   };
 
   return (
@@ -42,7 +27,7 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className={styles.container}>
-        <Link to="/" className={styles.logo} onClick={closeMobileMenu}>
+        <Link to="/" className={styles.logo}>
           <motion.h1 
             className={styles.logoText}
             whileHover={{ scale: 1.05 }}
@@ -52,17 +37,9 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
           </motion.h1>
         </Link>
         
-        <button 
-          className={styles.mobileMenuButton}
-          onClick={toggleMobileMenu}
-          aria-label="Toggle mobile menu"
-        >
-          {mobileMenuOpen ? <FiX /> : <FiMenu />}
-        </button>
-        
-        <nav className={`${styles.nav} ${mobileMenuOpen ? styles.mobileOpen : ''}`}>
+        <nav className={styles.nav}>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link to="/campaigns" className={getNavLinkClass('/campaigns')} onClick={closeMobileMenu}>
+            <Link to="/campaigns" className={getNavLinkClass('/campaigns')}>
               <FiGrid className={styles.navIcon} />
               <span>Campaigns</span>
             </Link>
@@ -70,19 +47,19 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
           {isAuthenticated && (
             <>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/dashboard" className={getNavLinkClass('/dashboard')} onClick={closeMobileMenu}>
+                <Link to="/dashboard" className={getNavLinkClass('/dashboard')}>
                   <FiLayout className={styles.navIcon} />
                   <span>Dashboard</span>
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/analytics" className={getNavLinkClass('/analytics')} onClick={closeMobileMenu}>
+                <Link to="/analytics" className={getNavLinkClass('/analytics')}>
                   <FiBarChart2 className={styles.navIcon} />
                   <span>Analytics</span>
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/create" className={getNavLinkClass('/create')} onClick={closeMobileMenu}>
+                <Link to="/create" className={getNavLinkClass('/create')}>
                   <FiPlusCircle className={styles.navIcon} />
                   <span>Create</span>
                 </Link>
@@ -97,7 +74,7 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
             <div className={styles.userMenu}>
               <span className={styles.userName}>Hi, {user?.name}</span>
               <motion.button 
-                onClick={handleLogout} 
+                onClick={logout} 
                 className={styles.logoutButton}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -106,18 +83,11 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
               </motion.button>
             </div>
           ) : (
-            <div className={styles.authButtons}>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/login" className={styles.loginButton} onClick={closeMobileMenu}>
-                  Login
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/register" className={styles.registerButton} onClick={closeMobileMenu}>
-                  Sign Up
-                </Link>
-              </motion.div>
-            </div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link to="/login" className={styles.getStartedButton}>
+                Get Started
+              </Link>
+            </motion.div>
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiLock, FiUserPlus, FiLogIn } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiUserPlus, FiLogIn, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { RegisterCredentials } from '../types/user';
@@ -16,6 +16,8 @@ export function Register() {
     confirmPassword: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -115,18 +117,28 @@ export function Register() {
               <FiLock className={styles.labelIcon} />
               Password
             </label>
-            <motion.input
-              type="password"
-              id="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-              className={styles.input}
-              placeholder="Create a password (min 6 characters)"
-              whileFocus={{ scale: 1.01 }}
-            />
+            <div className={styles.passwordWrapper}>
+              <motion.input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={credentials.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                className={styles.input}
+                placeholder="Create a password (min 6 characters)"
+                whileFocus={{ scale: 1.01 }}
+              />
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           <div className={styles.field}>
@@ -134,17 +146,27 @@ export function Register() {
               <FiLock className={styles.labelIcon} />
               Confirm Password
             </label>
-            <motion.input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={credentials.confirmPassword}
-              onChange={handleChange}
-              required
-              className={styles.input}
-              placeholder="Confirm your password"
-              whileFocus={{ scale: 1.01 }}
-            />
+            <div className={styles.passwordWrapper}>
+              <motion.input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={credentials.confirmPassword}
+                onChange={handleChange}
+                required
+                className={styles.input}
+                placeholder="Confirm your password"
+                whileFocus={{ scale: 1.01 }}
+              />
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           <AnimatedButton

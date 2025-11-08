@@ -17,23 +17,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-md);
 }
 
 .logo {
   text-decoration: none;
   color: var(--color-text);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .logoText {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-primary);
+  margin: 0;
+  line-height: 1;
 }
 
 .nav {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
+  flex: 1;
+  justify-content: center;
 }
 
 .navLink {
@@ -120,29 +128,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.authButtons {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.loginButton {
-  text-decoration: none;
-  color: var(--color-text-secondary);
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-lg);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all var(--transition-normal);
-}
-
-.loginButton:hover {
-  color: var(--color-text);
-  background: var(--color-surface);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.registerButton {
+/* Get Started Button */
+.getStartedButton {
   text-decoration: none;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: white;
@@ -152,27 +139,13 @@
   font-weight: 600;
   transition: all var(--transition-normal);
   box-shadow: 0 4px 12px rgba(162, 170, 219, 0.35);
+  display: inline-block;
+  white-space: nowrap;
 }
 
-.registerButton:hover {
+.getStartedButton:hover {
   box-shadow: 0 6px 16px rgba(162, 170, 219, 0.45);
   transform: translateY(-2px);
-}
-
-/* Mobile Menu Toggle */
-.mobileMenuButton {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--color-text);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  transition: all var(--transition-normal);
-}
-
-.mobileMenuButton:hover {
-  color: var(--color-primary);
 }
 
 @media (max-width: 968px) {
@@ -182,83 +155,107 @@
 
   .container {
     padding: 0 var(--spacing-md);
-    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+  
+  .logo {
+    flex-shrink: 0;
   }
   
   .logoText {
     font-size: 1.25rem;
   }
   
-  .mobileMenuButton {
-    display: block;
-    order: 3;
-  }
-  
   .nav {
-    display: none;
-    width: 100%;
-    order: 4;
-    flex-direction: column;
-    gap: 0;
-    margin-top: var(--spacing-md);
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-sm);
-    box-shadow: var(--shadow-lg);
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: var(--spacing-xs);
   }
-  
-  .nav.mobileOpen {
-    display: flex;
-  }
-  
+
   .navLink {
-    padding: var(--spacing-md);
-    font-size: 1rem;
-    width: 100%;
-    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    font-size: 0.85rem;
+    justify-content: center;
+    align-items: center;
   }
-  
-  .navLink::after {
+
+  .navLink span {
     display: none;
   }
 
+  .navIcon {
+    font-size: 1rem;
+    margin: 0;
+  }
+
   .actions {
-    order: 2;
     gap: var(--spacing-sm);
+    margin-left: auto;
   }
 
   .userName {
     display: none;
   }
 
-  .authButtons {
-    gap: var(--spacing-xs);
+  .getStartedButton {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
   }
 
-  .loginButton,
-  .registerButton {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.875rem;
+  .logoutButton {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
   }
 }
 
 @media (max-width: 480px) {
   .container {
     padding: 0 var(--spacing-sm);
+    gap: var(--spacing-sm);
   }
   
   .logoText {
-    font-size: 1.1rem;
+    font-size: 1rem;
+  }
+
+  .nav {
+    gap: 4px;
+  }
+
+  .navLink {
+    padding: 6px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .navIcon {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .actions {
+    gap: var(--spacing-xs);
   }
   
-  .loginButton,
-  .registerButton {
-    padding: var(--spacing-xs);
-    font-size: 0.8rem;
+  .getStartedButton {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
   }
   
   .logoutButton {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: 0.8rem;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
   }
 }
