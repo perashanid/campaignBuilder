@@ -4,9 +4,7 @@ import { authService } from './authService';
 // Use environment variable or fallback to appropriate URL
 const API_BASE_URL = import.meta.env.VITE_API_URL 
   ? import.meta.env.VITE_API_URL
-  : import.meta.env.DEV 
-    ? ''  // Use Vite proxy in development (no base URL needed)
-    : 'https://campaignbuilder-backend.onrender.com';
+  : '';  // Use relative URLs for same-domain deployment
 
 
 

@@ -3,9 +3,7 @@ import { User, LoginCredentials, RegisterCredentials, AuthResponse } from '../ty
 
 const API_BASE_URL = import.meta.env.VITE_API_URL 
   ? `${import.meta.env.VITE_API_URL}/api`
-  : import.meta.env.DEV 
-    ? '/api'  // Use Vite proxy in development
-    : 'https://campaignbuilder-backend.onrender.com/api';
+  : '/api';  // Use relative URLs for same-domain deployment
 
 // Debug logging
 console.log('🔐 Auth Service Configuration:');
