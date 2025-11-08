@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiHeart, FiMail, FiGithub, FiTwitter, FiLinkedin, FiFacebook, FiInstagram } from 'react-icons/fi';
+import { FiHeart, FiMail, FiGithub, FiLinkedin } from 'react-icons/fi';
 import styles from './Footer.module.css';
 
 interface FooterProps {
@@ -25,14 +25,14 @@ export function Footer({ className, onMouseEnter }: FooterProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h3 className={styles.title}>Campaign Platform</h3>
+            <h3 className={styles.title}>Camply</h3>
             <p className={styles.description}>
               Empowering communities through blood donation and fundraising campaigns. 
               Together, we can make a difference and save lives.
             </p>
             <div className={styles.socialLinks}>
               <motion.a 
-                href="https://github.com" 
+                href="https://github.com/perashaniD" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.socialLink}
@@ -43,18 +43,7 @@ export function Footer({ className, onMouseEnter }: FooterProps) {
                 <FiGithub />
               </motion.a>
               <motion.a 
-                href="https://twitter.com" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.socialLink}
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Twitter"
-              >
-                <FiTwitter />
-              </motion.a>
-              <motion.a 
-                href="https://linkedin.com" 
+                href="https://linkedin.com/in/shanid-sajjatuz-islam" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.socialLink}
@@ -65,26 +54,13 @@ export function Footer({ className, onMouseEnter }: FooterProps) {
                 <FiLinkedin />
               </motion.a>
               <motion.a 
-                href="https://facebook.com" 
-                target="_blank"
-                rel="noopener noreferrer"
+                href="mailto:shanidsajjatuz@gmail.com" 
                 className={styles.socialLink}
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                aria-label="Facebook"
+                aria-label="Email"
               >
-                <FiFacebook />
-              </motion.a>
-              <motion.a 
-                href="https://instagram.com" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.socialLink}
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Instagram"
-              >
-                <FiInstagram />
+                <FiMail />
               </motion.a>
             </div>
           </motion.div>
@@ -248,7 +224,7 @@ export function Footer({ className, onMouseEnter }: FooterProps) {
         >
           <div className={styles.bottomContent}>
             <p className={styles.copyright}>
-              © {currentYear} Campaign Platform. Made with <FiHeart className={styles.heartIcon} /> for a better world.
+              © {currentYear} Camply. Made with <FiHeart className={styles.heartIcon} /> for a better world.
             </p>
             <div className={styles.bottomLinks}>
               <Link to="/sitemap" className={styles.bottomLink}>Sitemap</Link>

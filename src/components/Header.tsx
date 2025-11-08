@@ -48,7 +48,7 @@ export function Header({ className = '', onMouseEnter }: HeaderProps) {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            Campaign Platform
+            Camply
           </motion.h1>
         </Link>
         

@@ -1,7 +1,14 @@
 {
-  "name": "campaign-platform-api",
+  "name": "camply-api",
   "version": "1.0.0",
   "type": "module",
+  "description": "Backend API for Camply - Campaign platform for blood donation and fundraising",
+  "author": "Shanid Sajjatuz Islam <shanidsajjatuz@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/perashaniD/camply.git"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
