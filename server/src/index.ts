@@ -1,12 +1,18 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import dotenv from 'dotenv';
 import { connectDB, closeDB } from './db/index.js';
 import campaignsRouter from './routes/campaigns.js';
 import authRouter from './routes/auth.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = new Hono();
 
@@ -59,15 +65,25 @@ app.get('/health', async (c) => {
 app.route('/api/auth', authRouter);
 app.route('/api/campaigns', campaignsRouter);
 
-// 404 handler
-app.notFound((c) => {
-  return c.json({ 
-    error: { 
-      code: 'NOT_FOUND', 
-      message: 'Endpoint not found' 
-    } 
-  }, 404);
-});
+// Serve static files from frontend build (production only)
+if (process.env.NODE_ENV === 'production') {
+  const staticPath = path.join(__dirname, 'public');
+  const fs = await import('fs/promises');
+  
+  // Serve static files
+  app.get('/assets/*', serveStatic({ root: staticPath }));
+  app.get('/vite.svg', serveStatic({ root: staticPath }));
+  
+  // Serve index.html for all non-API routes (SPA support)
+  app.get('*', async (c) => {
+    try {
+      const html = await fs.readFile(path.join(staticPath, 'index.html'), 'utf-8');
+      return c.html(html);
+    } catch (error) {
+      return c.text('Frontend not found', 404);
+    }
+  });
+}
 
 // Error handler
 app.onError((err: Error, c) => {

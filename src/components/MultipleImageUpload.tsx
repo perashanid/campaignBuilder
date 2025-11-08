@@ -18,8 +18,6 @@ export function MultipleImageUpload({
   error 
 }: MultipleImageUploadProps) {
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
-
   const [imageError, setImageError] = useState<string>('');
 
   const validateImageInput = (url: string): string | null => {
@@ -28,27 +26,6 @@ export function MultipleImageUpload({
     if (values.includes(url)) return 'This image has already been added';
     if (values.length >= maxImages) return `Maximum ${maxImages} images allowed`;
     return null;
-  };
-
-  const testImageLoad = (url: string): Promise<{ success: boolean; error?: string }> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const timeout = setTimeout(() => {
-        resolve({ success: false, error: 'Image load timeout' });
-      }, 10000); // 10 second timeout
-      
-      img.onload = () => {
-        clearTimeout(timeout);
-        resolve({ success: true });
-      };
-      
-      img.onerror = () => {
-        clearTimeout(timeout);
-        resolve({ success: false, error: 'Failed to load image' });
-      };
-      
-      img.src = url;
-    });
   };
 
   const handleAddImage = async () => {
@@ -96,21 +73,16 @@ export function MultipleImageUpload({
               onKeyDown={handleKeyDown}
               placeholder="Enter image URL and press Enter"
               className={styles.input}
-              disabled={isValidating}
             />
             <button
               type="button"
               onClick={handleAddImage}
-              disabled={!newImageUrl.trim() || !validateImageUrl(newImageUrl) || isValidating}
+              disabled={!newImageUrl.trim() || !validateImageUrl(newImageUrl)}
               className={styles.addButton}
             >
-              {isValidating ? (
-                <span className={styles.spinner}></span>
-              ) : (
-                <svg className={styles.addIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              )}
+              <svg className={styles.addIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
             </button>
           </div>
         </div>

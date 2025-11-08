@@ -55,7 +55,7 @@ export function CampaignGrid({ campaigns, loading = false }: CampaignGridProps) 
         }
       }}
     >
-      {campaigns.map((campaign, index) => (
+      {campaigns.map((campaign) => (
         <motion.div
           key={campaign.id}
           variants={{

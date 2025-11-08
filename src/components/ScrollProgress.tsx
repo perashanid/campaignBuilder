@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import styles from './ScrollProgress.module.css';
 
